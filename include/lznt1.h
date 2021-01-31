@@ -29,6 +29,12 @@
 
 #include <stdint.h>
 
+struct lznt_hdr
+{
+  char magic[8];
+  uint32_t len;
+} __attribute__ ((packed));
+
 /** Extract LZNT1 block length */
 #define LZNT1_BLOCK_LEN(header) (((header) & 0x0fff) + 1)
 

@@ -139,6 +139,8 @@ def lznt1_compress(buf, chunk_size=0x1000):
 
 def main():
     fp1 = open(args.SRC, 'rb')
+    if args.decompress:
+        fp1.seek(0x10)
     data1 = fp1.read()
     print('[*] input size = {} bytes'.format(len(data1)))
     if args.decompress:
@@ -146,6 +148,9 @@ def main():
     else:
         data2 = lznt1_compress(data1)
     fp2 = open(args.DST, 'wb')
+    if not args.decompress:
+        fp2.write(struct.pack ('<Q', 0x454c4946544e5a4c))
+        fp2.write(struct.pack('<Q', len(data2)))
     fp2.write(data2)
     print('[*] output size = {} bytes'.format(len(data2)))
 

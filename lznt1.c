@@ -52,6 +52,7 @@ static ssize_t lznt1_block (const void *data, size_t limit, size_t offset,
   unsigned int next_threshold = 16;
   unsigned int tag_bit = 0;
   unsigned int tag = 0;
+
   while (offset != limit)
   {
     /* Extract tag */
@@ -131,7 +132,18 @@ ssize_t lznt1_decompress (const void *data, size_t len, void *buf)
   size_t limit;
   void *block;
   ssize_t block_out_len;
-  while (offset != len)
+  const struct lznt_hdr *hdr = data;
+
+  if (len > 0x10 && memcmp (hdr->magic, "LZNTFILE", 8) == 0)
+  {
+    DBG2 ("FILE LEN %d\n", hdr->len);
+    offset += 0x10;
+    len = hdr->len;
+  }
+  else
+    return -1;
+
+  while (offset < len)
   {
     /* Check for end marker */
     if ((offset + sizeof (*end)) == len)

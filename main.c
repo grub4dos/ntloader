@@ -251,7 +251,7 @@ int main (void)
     void *dst;
     ssize_t dst_len = lznt1_decompress (initrd, initrd_len, NULL);
     size_t padded_len = 0;
-    if (dst_len < 0)
+    if (dst_len <= 0)
     {
       DBG ("...extracting initrd\n");
       cpio_extract (initrd, initrd_len, add_file);
