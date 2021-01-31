@@ -107,7 +107,7 @@ kernel /ntloader uuid=%?% file=/xxx.vhd quiet
      in text mode by using the 'text' command-line option.
     For example:
 ```
-kernel /ntloader uuid=%?% file=/xxx.vhd gui
+kernel /ntloader uuid=%?% file=/xxx.vhd text
 ```
 - Troubleshoot
     You can add the 'pause' command-line option for ntloader.
