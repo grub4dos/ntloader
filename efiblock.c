@@ -27,12 +27,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "string.h"
-#include "ntboot.h"
-#include "vdisk.h"
-#include "efi.h"
-#include "efiblock.h"
-#include "efi/Protocol/GraphicsOutput.h"
+#include <string.h>
+#include <ntboot.h>
+#include <vdisk.h>
+#include <efi.h>
+#include <efiblock.h>
+#include <efi/Protocol/GraphicsOutput.h>
 
 /** A block I/O device */
 struct efi_block

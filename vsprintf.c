@@ -25,7 +25,7 @@
 #include <vsprintf.h>
 #include <stdint.h>
 #include <string.h>
-#include "ntboot.h"
+#include <ntboot.h>
 
 /** @file */
 

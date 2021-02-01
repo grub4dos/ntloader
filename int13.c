@@ -26,9 +26,9 @@
 
 #include <string.h>
 #include <stdio.h>
-#include "ntboot.h"
-#include "int13.h"
-#include "vdisk.h"
+#include <ntboot.h>
+#include <int13.h>
+#include <vdisk.h>
 
 /** Emulated drive number */
 static int vdisk_drive;

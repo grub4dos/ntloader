@@ -24,7 +24,7 @@
  *
  */
 
-#include "ntboot.h"
+#include <ntboot.h>
 
 /* Refer to i386 symbols as needed */
 #if __x86_64__
@@ -233,6 +233,10 @@ kernel_version:
 loadflags:
 	.byte	LOADED_HIGH
 
+	.org	0x214
+code32_start:
+	.long	0
+
 	.org	0x218
 ramdisk_image:
 	.long	0	/* Filled in by boot loader */
@@ -255,7 +259,7 @@ xloadflags:
 
 	.org	0x238
 cmdline_size:
-	.long	255
+	.long	511
 
 	.org	0x23c
 hardware_subarch:

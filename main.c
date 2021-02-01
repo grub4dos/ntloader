@@ -237,6 +237,7 @@ int main (void)
   init_cookie ();
 
   /* Print welcome banner */
+  cls ();
   print_banner ();
   DBG ("type: linux16\n");
 

@@ -26,9 +26,9 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "bootapp.h"
-#include "ntboot.h"
-#include "efi.h"
+#include <bootapp.h>
+#include <ntboot.h>
+#include <efi.h>
 
 /**
  * Print character to console

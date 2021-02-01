@@ -24,7 +24,7 @@
  *
  */
 
-#include "ntboot.h"
+#include <ntboot.h>
 
 /* Offsets within parameter block */
 #define PARAM_VECTOR 0x00

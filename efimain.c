@@ -225,6 +225,7 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   init_cookie ();
 
   /* Print welcome banner */
+  cls ();
   print_banner ();
   DBG ("type: chainloader\n");
   DBG ("systab=%p image_handle=%p\n", systab, image_handle);
@@ -275,6 +276,7 @@ void efi_linuxentry (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab,
   init_cookie ();
 
   /* Print welcome banner */
+  cls ();
   print_banner ();
   DBG ("type: linuxefi\n");
   DBG ("systab=%p image_handle=%p kernel_params=%p\n",

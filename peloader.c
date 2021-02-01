@@ -28,8 +28,8 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "ntboot.h"
-#include "peloader.h"
+#include <ntboot.h>
+#include <peloader.h>
 
 /**
  * Load PE image into memory

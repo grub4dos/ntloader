@@ -28,9 +28,9 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
-#include "ctype.h"
-#include "ntboot.h"
-#include "vdisk.h"
+#include <ctype.h>
+#include <ntboot.h>
+#include <vdisk.h>
 
 /** Virtual files */
 struct vdisk_file vdisk_files[VDISK_MAX_FILES];

@@ -29,8 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ntboot.h"
-#include "cpio.h"
+#include <ntboot.h>
+#include <cpio.h>
 
 /**
  * Align CPIO length to nearest dword

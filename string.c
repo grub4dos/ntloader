@@ -27,8 +27,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include "ctype.h"
-#include "wctype.h"
+#include <ctype.h>
+#include <wctype.h>
 
 /**
  * Copy memory area

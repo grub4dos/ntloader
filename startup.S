@@ -24,7 +24,7 @@
  *
  */
 
-#include "ntboot.h"
+#include <ntboot.h>
 
 #define WARM_REBOOT_FLAG 0x0472
 #define WARM_REBOOT_MAGIC 0x1234

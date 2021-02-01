@@ -152,6 +152,7 @@ extern void __attribute__ ((noreturn, format (printf, 1, 2)))
 die (const char *fmt, ...);
 extern void pause_boot (void);
 extern void print_banner (void);
+extern void cls (void);
 
 extern unsigned long __stack_chk_guard;
 extern void init_cookie (void);

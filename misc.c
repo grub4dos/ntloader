@@ -18,8 +18,9 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include "ntboot.h"
-#include "efi.h"
+#include <string.h>
+#include <ntboot.h>
+#include <efi.h>
 
 /** Stack cookie */
 unsigned long __stack_chk_guard;
@@ -134,6 +135,53 @@ void pause_boot (void)
     printf ("Press any key to continue booting...");
     getchar();
     printf ("\n");
+  }
+}
+
+static void gotoxy (uint16_t x, uint16_t y)
+{
+  struct bootapp_callback_params params;
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
+  if (efi_systab)
+  {
+    conout = efi_systab->ConOut;
+    conout->SetCursorPosition (conout, x, y);
+  }
+  else
+  {
+    memset (&params, 0, sizeof (params));
+    params.vector.interrupt = 0x10;
+    params.eax = 0x0200;
+    params.ebx = 0;
+    params.edx = (y << 8) | x;
+    call_interrupt (&params);
+  }
+}
+
+void cls (void)
+{
+  struct bootapp_callback_params params;
+  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
+  uint8_t ch = ' ';
+  INT32 orig_attr;
+  if (efi_systab)
+  {
+    conout = efi_systab->ConOut;
+    orig_attr = conout->Mode->Attribute;
+    conout->SetAttribute (conout, 0x00);
+    conout->ClearScreen (conout);
+    conout->SetAttribute (conout, orig_attr);
+  }
+  else
+  {
+    gotoxy (0, 0);
+    memset (&params, 0, sizeof (params));
+    params.vector.interrupt = 0x10;
+    params.eax = ch | 0x0900;
+    params.ebx = 0x0007 & 0xff;
+    params.ecx = 80 * 25;
+    call_interrupt (&params);
+    gotoxy (0, 0);
   }
 }
 
