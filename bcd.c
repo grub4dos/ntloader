@@ -25,6 +25,7 @@
 #include <strings.h>
 #include <wchar.h>
 #include <ntboot.h>
+#include <reg.h>
 #include <bcd.h>
 #include <cmdline.h>
 #include <charset.h>
@@ -93,18 +94,137 @@ bcd_patch_path (void)
   bcd_replace_hex (search, strlen (search), nt_cmdline->path16, len, 2);
 }
 
+static void
+bcd_patch_hive (reg_hive_t *hive, const wchar_t *keyname, void *val)
+{
+  HKEY root, objects, osloader, elements, key;
+  uint8_t *data = NULL;
+  uint32_t data_len = 0, type;
+  hive->find_root (hive, &root);
+  hive->find_key (hive, root, BCD_REG_ROOT, &objects);
+  if (wcscasecmp (keyname, BCDOPT_TIMEOUT) == 0)
+    hive->find_key (hive, objects, GUID_BOOTMGR, &osloader);
+  else if (wcscasecmp (keyname, BCDOPT_IMGOFS) == 0)
+    hive->find_key (hive, objects, GUID_RAMDISK, &osloader);
+  else
+    hive->find_key (hive, objects, GUID_OSENTRY, &osloader);
+  hive->find_key (hive, osloader, BCD_REG_HKEY, &elements);
+  hive->find_key (hive, elements, keyname, &key);
+  hive->query_value_no_copy (hive, key, BCD_REG_HVAL,
+                             (void **)&data, &data_len, &type);
+  memcpy (data, val, data_len);
+  DBG ("...patched %p len %d\n", data, data_len);
+}
+
+static void
+bcd_parse_bool (reg_hive_t *hive, const wchar_t *keyname, const char *s)
+{
+  uint8_t val = 0;
+  if (strcasecmp (s, "yes") == 0 || strcasecmp (s, "on") == 0 ||
+      strcasecmp (s, "true") == 0 || strcasecmp (s, "1") == 0)
+    val = 1;
+  DBG ("...patching key %ls value %d\n", keyname, val);
+  bcd_patch_hive (hive, keyname, &val);
+}
+
+#if 0
+static void
+bcd_parse_u64 (reg_hive_t *hive, const wchar_t *keyname, const char *s)
+{
+  uint64_t val = 0;
+  val = strtoul (s, NULL, 0);
+  bcd_patch_hive (hive, keyname, &val);
+}
+#endif
+
+static void
+bcd_parse_str (reg_hive_t *hive, const wchar_t *keyname, const char *s)
+{
+  HKEY root, objects, osloader, elements, key;
+  uint16_t *data = NULL;
+  uint32_t data_len = 0, type;
+  DBG ("...patching key %ls value %s\n", keyname, s);
+  hive->find_root (hive, &root);
+  hive->find_key (hive, root, BCD_REG_ROOT, &objects);
+  hive->find_key (hive, objects, GUID_OSENTRY, &osloader);
+  hive->find_key (hive, osloader, BCD_REG_HKEY, &elements);
+  hive->find_key (hive, elements, keyname, &key);
+  hive->query_value_no_copy (hive, key, BCD_REG_HVAL,
+                             (void **)&data, &data_len, &type);
+  memset (data, 0, data_len);
+  grub_utf8_to_utf16 (data, data_len, (uint8_t *)s, -1, NULL);
+}
+
 void
 bcd_patch_data (void)
 {
   static const wchar_t a[] = L".exe";
   static const wchar_t b[] = L".efi";
+  reg_hive_t *hive = NULL;
+  if (open_hive (nt_cmdline->bcd_data, nt_cmdline->bcd_len, &hive) || !hive)
+    die ("BCD hive load error.\n");
+  else
+    DBG ("BCD hive load OK.\n");
+
   if (nt_cmdline->type != BOOT_WIN)
     bcd_patch_path ();
 
   bcd_replace_hex (BCD_DP_MAGIC, strlen (BCD_DP_MAGIC),
                    &nt_cmdline->info, sizeof (struct bcd_disk_info), 2);
+
+  if (nt_cmdline->test_mode[0])
+    bcd_parse_bool (hive, BCDOPT_TESTMODE, nt_cmdline->test_mode);
+  else
+    bcd_parse_bool (hive, BCDOPT_TESTMODE, "no");
+  if (nt_cmdline->hires[0])
+    bcd_parse_bool (hive, BCDOPT_HIGHEST, nt_cmdline->hires);
+  else
+    bcd_parse_bool (hive, BCDOPT_HIGHEST, "no");
+  if (nt_cmdline->nx[0])
+  {
+    uint64_t nx = 0;
+    if (strcasecmp (nt_cmdline->nx, "OptIn") == 0)
+      nx = NX_OPTIN;
+    else if (strcasecmp (nt_cmdline->nx, "OptOut") == 0)
+      nx = NX_OPTOUT;
+    else if (strcasecmp (nt_cmdline->nx, "AlwaysOff") == 0)
+      nx = NX_ALWAYSOFF;
+    else if (strcasecmp (nt_cmdline->nx, "AlwaysOn") == 0)
+      nx = NX_ALWAYSON;
+    bcd_patch_hive (hive, BCDOPT_NX, &nx);
+  }
+  if (nt_cmdline->pae[0])
+  {
+    uint64_t pae = 0;
+    if (strcasecmp (nt_cmdline->pae, "Default") == 0)
+      pae = PAE_DEFAULT;
+    else if (strcasecmp (nt_cmdline->pae, "Enable") == 0)
+      pae = PAE_ENABLE;
+    else if (strcasecmp (nt_cmdline->pae, "Disable") == 0)
+      pae = PAE_DISABLE;
+    bcd_patch_hive (hive, BCDOPT_PAE, &pae);
+  }
+  if (nt_cmdline->loadopt[0])
+    bcd_parse_str (hive, BCDOPT_CMDLINE, nt_cmdline->loadopt);
+  else
+    bcd_parse_str (hive, BCDOPT_CMDLINE, BCD_DEFAULT_CMDLINE);
+  if (nt_cmdline->winload[0])
+    bcd_parse_str (hive, BCDOPT_WINLOAD, nt_cmdline->winload);
+  else
+  {
+    if (nt_cmdline->type == BOOT_WIM)
+      bcd_parse_str (hive, BCDOPT_WINLOAD, BCD_LONG_WINLOAD);
+    else
+      bcd_parse_str (hive, BCDOPT_WINLOAD, BCD_SHORT_WINLOAD);
+  }
+  if (nt_cmdline->sysroot[0])
+    bcd_parse_str (hive, BCDOPT_SYSROOT, nt_cmdline->sysroot);
+  else
+    bcd_parse_str (hive, BCDOPT_SYSROOT, BCD_DEFAULT_SYSROOT);
+
   if (efi_systab)
     bcd_replace_hex (a, 8, b, 8, 0);
   else
     bcd_replace_hex (b, 8, a, 8, 0);
+
 }

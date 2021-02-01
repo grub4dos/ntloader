@@ -125,6 +125,55 @@ void process_cmdline (char *cmdline)
         p++;
       }
     }
+    else if (strcmp (key, "testmode") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.test_mode, 6, "true");
+      else
+        snprintf (args.test_mode, 6, "%s", value);
+    }
+    else if (strcmp (key, "hires") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.hires, 6, "true");
+      else
+        snprintf (args.hires, 6, "%s", value);
+    }
+    else if (strcmp (key, "nx") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.nx, 10, "OptIn");
+      else
+        snprintf (args.nx, 10, "%s", value);
+    }
+    else if (strcmp (key, "pae") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.pae, 8, "Default");
+      else
+        snprintf (args.pae, 8, "%s", value);
+    }
+    else if (strcmp (key, "loadopt") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.loadopt, 128, "DDISABLE_INTEGRITY_CHECKS");
+      else
+        snprintf (args.loadopt, 128, "%s", value);
+    }
+    else if (strcmp (key, "winload") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.winload, 64, "\\Windows\\System32\\boot\\winload.efi");
+      else
+        snprintf (args.winload, 64, "%s", value);
+    }
+    else if (strcmp (key, "sysroot") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.sysroot, 32, "\\Windows");
+      else
+        snprintf (args.sysroot, 32, "%s", value);
+    }
     else if (key == cmdline)
     {
       /* Ignore unknown initial arguments, which may

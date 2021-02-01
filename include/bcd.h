@@ -19,7 +19,52 @@
 #ifndef _BCD_BOOT_H
 #define _BCD_BOOT_H 1
 
+#include <ntboot.h>
 #include <stdint.h>
+
+#define BCD_DP_MAGIC "GNU GRUB2 NTBOOT"
+
+#define GUID_OSENTRY L"{19260817-6666-8888-abcd-000000000000}"
+#define GUID_BOOTMGR L"{9dea862c-5cdd-4e70-acc1-f32b344d4795}"
+#define GUID_RAMDISK L"{ae5534e0-a924-466c-b836-758539a3ee3a}"
+#define GUID_MEMDIAG L"{b2721d73-1db4-4c62-bf78-c548a880142d}"
+#define GUID_OSNTLDR L"{466f5a88-0af2-4f76-9038-095b170dc21c}"
+
+#define BCD_REG_ROOT L"Objects"
+#define BCD_REG_HKEY L"Elements"
+#define BCD_REG_HVAL L"Element"
+
+#define BCDOPT_WINLOAD  L"12000002"
+#define BCDOPT_CMDLINE  L"12000030"
+#define BCDOPT_TESTMODE L"16000049"
+#define BCDOPT_HIGHEST  L"16000054"
+#define BCDOPT_SYSROOT  L"22000002"
+#define BCDOPT_TIMEOUT  L"25000004" // {bootmgr}
+#define BCDOPT_NX       L"25000020"
+#define BCDOPT_PAE      L"25000021"
+#define BCDOPT_DETHAL   L"26000010"
+#define BCDOPT_WINPE    L"26000022"
+#define BCDOPT_NOVESA   L"26000042"
+#define BCDOPT_NOVGA    L"26000043"
+#define BCDOPT_SOS      L"26000091"
+#define BCDOPT_IMGOFS   L"35000001" // {ramdiskoptions}
+
+#define NX_OPTIN     0x00
+#define NX_OPTOUT    0x01
+#define NX_ALWAYSOFF 0x02
+#define NX_ALWAYSON  0x03
+
+#define PAE_DEFAULT  0x00
+#define PAE_ENABLE   0x01
+#define PAE_DISABLE  0x02
+
+#define BCD_DEFAULT_CMDLINE "DDISABLE_INTEGRITY_CHECKS"
+
+#define BCD_LONG_WINLOAD "\\Windows\\System32\\boot\\winload.efi"
+
+#define BCD_SHORT_WINLOAD "\\Windows\\System32\\winload.efi"
+
+#define BCD_DEFAULT_SYSROOT "\\Windows"
 
 struct bcd_disk_info
 {
