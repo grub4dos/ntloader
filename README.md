@@ -170,5 +170,7 @@ You can also use lznt1 to compress initrd to reduce its size:
 python lznt1.py initrd.cpio initrd.lz1
 ```
 
-## Bugs
-MSDOS logical partitions are not supported.
+## License
+
+NTloader is released under the GPLv3 License. See LICENSE.txt for details.
+
