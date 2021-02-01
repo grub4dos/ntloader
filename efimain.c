@@ -270,6 +270,10 @@ void efi_linuxentry (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab,
 
   efi_image_handle = image_handle;
   efi_systab = systab;
+
+  /* Initialise stack cookie */
+  init_cookie ();
+
   /* Print welcome banner */
   print_banner ();
   DBG ("type: linuxefi\n");

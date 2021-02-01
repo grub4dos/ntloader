@@ -22,11 +22,11 @@
 ```
 title Boot Windows NT6+ PE
 uuid (hdx,y)
-kernel /ntloader uuid=%?% file=/path/to/winpe.wim
+kernel /ntloader uuid=%?_UUID% file=/path/to/winpe.wim
 initrd /initrd.lz1
 ```
 
-- a1ive GRUB2 
+- a1ive GRUB2
 ```
 menuentry "Boot Windows NT6+ PE" {
     probe -s dev_uuid -u (hdx,y);
@@ -61,11 +61,11 @@ menuentry "Boot Windows NT6+ PE" {
 ```
 title Boot Windows NT6+ PE
 uuid (hdx,y)
-kernel /ntloader uuid=%?%
+kernel /ntloader uuid=%?_UUID%
 initrd /initrd.lz1
 ```
 
-- a1ive GRUB2 
+- a1ive GRUB2
 ```
 menuentry "Boot Windows NT6+ PE" {
     probe -s dev_uuid -u (hdx,y);
@@ -96,6 +96,34 @@ menuentry "Boot Windows NT6+ PE" {
 
 ### Advanced options
 
+- Enable *Test Signing* mode
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd testmode=1
+```
+- Use the highest graphical resolution
+```
+kernel /ntloader uuid=%?% file=/xxx.wim hires=1
+```
+- Configure *Physical Address Extension* (PAE)
+```
+kernel /ntloader uuid=%?% pae=Enable|Disable|Default
+```
+- Configure *Data Execution Prevention* (DEP)
+```
+kernel /ntloader uuid=%?% nx=OptIn|OptOut|AlwaysOff|AlwaysOn
+```
+- Set Windows load options
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd loadopt=XXX
+```
+- Specify the path of `winload.exe` or `winload.efi`
+```
+kernel /ntloader uuid=%?% winload=\\Windows\\System32\\winload.efi
+```
+- Specify system root
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd sysroot=\\Windows
+```
 - Disable debug messages
     You can disable debug messages by using the 'quiet' command-line option.
     For example:
