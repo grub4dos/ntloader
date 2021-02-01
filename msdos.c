@@ -25,17 +25,18 @@
 #include <cmdline.h>
 #include <ntboot.h>
 
-int
-check_msdos_partmap (void *disk,
-                     int (*disk_read) (void *disk, uint64_t sector,
-                                       size_t len, void *buf))
+static unsigned part_count = 0;
+
+static int
+check_mbr (void *disk, uint32_t start_lba, int (*disk_read)
+              (void *disk, uint64_t sector, size_t len, void *buf))
 {
   int i;
   struct msdos_part_mbr mbr;
   uint64_t start_addr;
   uint32_t signature;
 
-  if (!disk_read (disk, 0, sizeof (mbr), &mbr))
+  if (!disk_read (disk, start_lba, sizeof (mbr), &mbr))
     return 0;
   if (mbr.signature != MSDOS_PART_SIGNATURE)
   {
@@ -45,6 +46,11 @@ check_msdos_partmap (void *disk,
 
   for (i = 0; i < MSDOS_MAX_PARTITIONS; i++)
   {
+    if (part_count >= 32)
+    {
+      DBG ("too many partitions.\n");
+      return 0;
+    }
     if (mbr.entries[i].type == MSDOS_PART_TYPE_GPT_DISK)
     {
       DBG ("found dummy mbr.\n");
@@ -54,13 +60,14 @@ check_msdos_partmap (void *disk,
       continue;
     if (msdos_part_is_extended (mbr.entries[i].type))
     {
-      /* TODO: add support for logical partition */
+      if (check_mbr (disk, start_lba + mbr.entries[i].start, disk_read))
+        return 1;
       continue;
     }
-    DBG ("part %d ", i);
-    if (check_fsuuid (disk, mbr.entries[i].start, disk_read))
+    DBG ("part %d (%d) ", part_count++, i);
+    if (check_fsuuid (disk, start_lba + mbr.entries[i].start, disk_read))
     {
-      start_addr = ((uint64_t) mbr.entries[i].start) << 9;
+      start_addr = ((uint64_t) mbr.entries[i].start + start_lba) << 9;
       signature = *(uint32_t *)mbr.unique_signature;
       DBG ("MBR Start=0x%llx Signature=%04X\n", start_addr, signature);
       memcpy (nt_cmdline->info.partid, &start_addr, sizeof (start_addr));
@@ -70,4 +77,13 @@ check_msdos_partmap (void *disk,
     }
   }
   return 0;
+}
+
+int
+check_msdos_partmap (void *disk,
+                     int (*disk_read) (void *disk, uint64_t sector,
+                                       size_t len, void *buf))
+{
+  part_count = 0;
+  return check_mbr (disk, 0, disk_read);
 }
