@@ -221,6 +221,9 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   efi_systab = systab;
   bs = systab->BootServices;
 
+  /* Initialise stack cookie */
+  init_cookie ();
+
   /* Print welcome banner */
   print_banner ();
   DBG ("type: chainloader\n");

@@ -233,6 +233,9 @@ int main (void)
 {
   struct loaded_pe pe;
 
+  /* Initialise stack cookie */
+  init_cookie ();
+
   /* Print welcome banner */
   print_banner ();
   DBG ("type: linux16\n");

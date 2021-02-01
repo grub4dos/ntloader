@@ -31,11 +31,13 @@ CFLAGS += -DVERSION="\"$(VERSION)\""
 CFLAGS_i386 += -m32 -march=i386 -malign-double -fno-pic
 CFLAGS_x86_64 += -m64 -mno-red-zone -fpie
 
-# Inhibit -fno-stack-protector
-SP_TEST = $(CC) -fno-stack-protector -x c -c /dev/null \
-                -o /dev/null >/dev/null 2>&1
-SP_FLAGS := $(shell $(SP_TEST) && $(ECHO) '-fno-stack-protector')
-WORKAROUND_CFLAGS += $(SP_FLAGS)
+# Enable stack protection if available
+#
+SPG_TEST = $(CC) -fstack-protector-strong -mstack-protector-guard=global \
+		 -x c -c /dev/null -o /dev/null >/dev/null 2>&1
+SPG_FLAGS := $(shell $(SPG_TEST) && $(ECHO) '-fstack-protector-strong ' \
+					    '-mstack-protector-guard=global')
+CFLAGS += $(SPG_FLAGS)
 
 # Inhibit unwanted debugging information
 CFI_TEST = $(CC) -fno-dwarf2-cfi-asm -fno-exceptions -fno-unwind-tables \
@@ -61,6 +63,11 @@ WNAPM_TEST = $(CC) -Wno-address-of-packed-member -x c -c /dev/null \
 WNAPM_FLAGS := $(shell $(WNAPM_TEST) && \
 		 $(ECHO) '-Wno-address-of-packed-member')
 WORKAROUND_CFLAGS += $(WNAPM_FLAGS)
+
+# Inhibit LTO
+LTO_TEST = $(CC) -fno-lto -x c -c /dev/null -o /dev/null >/dev/null 2>&1
+LTO_FLAGS := $(shell $(LTO_TEST) && $(ECHO) '-fno-lto')
+WORKAROUND_CFLAGS += $(LTO_FLAGS)
 
 CFLAGS += $(WORKAROUND_CFLAGS)
 CFLAGS += $(EXTRA_CFLAGS)
