@@ -124,6 +124,10 @@ kernel /ntloader uuid=%?% winload=\\Windows\\System32\\winload.efi
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd sysroot=\\Windows
 ```
+- Hook UEFI `SecureBoot` variable
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd secureboot=off
+``` 
 - Disable debug messages
     You can disable debug messages by using the 'quiet' command-line option.
     For example:
