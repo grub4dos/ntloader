@@ -123,6 +123,7 @@ efi_extract_initrd (void *initrd, uint32_t initrd_len)
   /* Extract files from initrd */
   if (initrd && initrd_len)
   {
+    DBG ("initrd=%p+0x%x\n", initrd, initrd_len);
     dst_len = lznt1_decompress (initrd, initrd_len, NULL);
     if (dst_len < 0)
     {
@@ -176,7 +177,7 @@ static void efi_load_initrd (EFI_HANDLE handle)
                       (uint8_t *)nt_cmdline->initrd_path, -1, NULL);
   efirc = root->Open (root, &file, wname, EFI_FILE_MODE_READ, 0);
   if (efirc != EFI_SUCCESS)
-    die ("Could not open (%s) %ls.\n", nt_cmdline->initrd_path, wname);
+    die ("Could not open %ls.\n", wname);
   file->SetPosition (file, 0xFFFFFFFFFFFFFFFF);
   file->GetPosition (file, &initrd_len);
   file->SetPosition (file, 0);
@@ -216,6 +217,8 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   EFI_BOOT_SERVICES *bs;
   EFI_LOADED_IMAGE_PROTOCOL *loaded;
   EFI_STATUS efirc;
+  size_t cmdline_len = 0;
+  char *cmdline = 0;
 
   efi_image_handle = image_handle;
   efi_systab = systab;
@@ -227,8 +230,6 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   /* Print welcome banner */
   cls ();
   print_banner ();
-  DBG ("type: chainloader\n");
-  DBG ("systab=%p image_handle=%p\n", systab, image_handle);
   /* Get loaded image protocol */
   efirc = bs->OpenProtocol (image_handle, &efi_loaded_image_protocol_guid,
                             (void **)&loaded, image_handle, NULL,
@@ -236,19 +237,18 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   if (efirc != EFI_SUCCESS)
     die ("Could not open loaded image protocol\n");
 
-  size_t cmdline_len = (loaded->LoadOptionsSize / sizeof (wchar_t));
-  char *cmdline = efi_malloc (4 * cmdline_len + 1);
-  const wchar_t *wcmdline = loaded->LoadOptions;
+  cmdline_len = (loaded->LoadOptionsSize / sizeof (wchar_t));
+  cmdline = efi_malloc (4 * cmdline_len + 1);
 
   /* Convert command line to ASCII */
-  *grub_utf16_to_utf8 ((uint8_t *) cmdline, wcmdline, cmdline_len) = 0;
+  *grub_utf16_to_utf8 ((uint8_t *) cmdline, loaded->LoadOptions, cmdline_len) = 0;
 
   /* Process command line */
   process_cmdline (cmdline);
   efi_free (cmdline);
+  DBG ("systab=%p image_handle=%p\n", systab, image_handle);
   if (! nt_cmdline->initrd_path[0])
     die ("initrd not found.\n");
-  DBG ("initrd=%s\n", nt_cmdline->initrd_path);
 
   efi_load_initrd (loaded->DeviceHandle);
 
@@ -262,6 +262,9 @@ void efi_linuxentry (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab,
   void *initrd = NULL;
   /** Length of initrd */
   uint32_t initrd_len;
+
+  uint32_t cmdline_len = 0;
+  char *cmdline = 0;
 
 #if __x86_64__
   extern char _bss[];
@@ -278,24 +281,24 @@ void efi_linuxentry (EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab,
   /* Print welcome banner */
   cls ();
   print_banner ();
-  DBG ("type: linuxefi\n");
-  DBG ("systab=%p image_handle=%p kernel_params=%p\n",
-       systab, image_handle, kernel_params);
   if (!kernel_params)
     die ("kernel params not found.\n");
-  else
-  {
-    uint32_t cmdline_len = kernel_params[0x238/4];
-    char *cmdline = efi_malloc (cmdline_len + 1);
-    memcpy (cmdline, (char *)(intptr_t)kernel_params[0x228/4], cmdline_len);
-    cmdline[cmdline_len] = '\0';
-    initrd = (void*)(intptr_t)kernel_params[0x218/4];
-    initrd_len = kernel_params[0x21c/4];
-    DBG ("initrd=%p+0x%x cmdline=%p+0x%x\n",
-         initrd, initrd_len, cmdline, cmdline_len);
-    process_cmdline (cmdline);
-    efi_free (cmdline);
-  }
+
+  cmdline_len = kernel_params[0x238/4];
+  cmdline = efi_malloc (cmdline_len + 1);
+  memcpy (cmdline, (char *)(intptr_t)kernel_params[0x228/4], cmdline_len);
+  cmdline[cmdline_len] = '\0';
+
+  initrd = (void*)(intptr_t)kernel_params[0x218/4];
+  initrd_len = kernel_params[0x21c/4];
+
+  /* Process command line */
+  process_cmdline (cmdline);
+  efi_free (cmdline);
+
+  DBG ("systab=%p image_handle=%p kernel_params=%p\n",
+       systab, image_handle, kernel_params);
+  DBG ("initrd=%p+0x%x\n", initrd, initrd_len);
 
   efidisk_init ();
   efidisk_iterate ();

@@ -239,7 +239,6 @@ int main (void)
   /* Print welcome banner */
   cls ();
   print_banner ();
-  DBG ("type: linux16\n");
 
   /* Process command line */
   process_cmdline (cmdline);

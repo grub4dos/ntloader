@@ -50,7 +50,7 @@ void process_cmdline (char *cmdline)
   nt_cmdline = &args;
   memset (&args, 0, sizeof (args));
   args.type = BOOT_WIN;
-  DBG ("Command line: %s\n", cmdline ? cmdline : "(null)");
+  printf ("Command line: %s\n", cmdline ? cmdline : "(null)");
   /* Do nothing if we have no command line */
   if ((cmdline == NULL) || (cmdline[0] == '\0'))
     return;

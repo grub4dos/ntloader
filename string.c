@@ -40,20 +40,21 @@
  */
 void *memcpy (void *dest, const void *src, size_t len)
 {
-  void *edi = dest;
-  const void *esi = src;
-  int discard_ecx;
-  /* Perform dword-based copy for bulk, then byte-based for remainder */
-  __asm__ __volatile__ ("rep movsl"
-                        : "=&D" (edi), "=&S" (esi),
-                        "=&c" (discard_ecx)
-                        : "0" (edi), "1" (esi), "2" (len >> 2)
-                        : "memory");
-  __asm__ __volatile__ ("rep movsb"
-                        : "=&D" (edi), "=&S" (esi),
-                        "=&c" (discard_ecx)
-                        : "0" (edi), "1" (esi), "2" (len & 3)
-                        : "memory");
+  char *d = (char *) dest;
+  const char *s = (const char *) src;
+
+  if (d < s)
+    while (len--)
+      *d++ = *s++;
+  else
+  {
+    d += len;
+    s += len;
+
+    while (len--)
+      *--d = *--s;
+  }
+
   return dest;
 }
 
@@ -67,23 +68,38 @@ void *memcpy (void *dest, const void *src, size_t len)
  */
 void *memset (void *dest, int c, size_t len)
 {
-  void *edi = dest;
-  int eax = c;
-  int discard_ecx;
-  /* Expand byte to whole dword */
-  eax |= (eax << 8);
-  eax |= (eax << 16);
-  /* Perform dword-based set for bulk, then byte-based for remainder */
-  __asm__ __volatile__ ("rep stosl"
-                        : "=&D" (edi), "=&a" (eax),
-                        "=&c" (discard_ecx)
-                        : "0" (edi), "1" (eax), "2" (len >> 2)
-                        : "memory");
-  __asm__ __volatile__ ("rep stosb"
-                        : "=&D" (edi), "=&a" (eax),
-                        "=&c" (discard_ecx)
-                        : "0" (edi), "1" (eax), "2" (len & 3)
-                        : "memory");
+  void *p = dest;
+  uint8_t pattern8 = c;
+
+  if (len >= 3 * sizeof (unsigned long))
+  {
+    unsigned long patternl = 0;
+    size_t i;
+
+    for (i = 0; i < sizeof (unsigned long); i++)
+      patternl |= ((unsigned long) pattern8) << (8 * i);
+
+    while (len > 0 && (((size_t) p) & (sizeof (unsigned long) - 1)))
+    {
+      *(uint8_t *) p = pattern8;
+      p = (uint8_t *) p + 1;
+      len--;
+    }
+    while (len >= sizeof (unsigned long))
+    {
+      *(unsigned long *) p = patternl;
+      p = (unsigned long *) p + 1;
+      len -= sizeof (unsigned long);
+    }
+  }
+
+  while (len > 0)
+  {
+    *(uint8_t *) p = pattern8;
+    p = (uint8_t *) p + 1;
+    len--;
+  }
+
   return dest;
 }
 
