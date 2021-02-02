@@ -68,11 +68,20 @@ startup:
 	.globl	efihandover
 	.globl	efihandover64
 efihandover:
-	jmp	i386(efi_linuxentry)
+	add	$0x4, %esp
+	/* save boot_params pointer */
+	movl	8(%esp), %esi
+	call	i386(efi_linuxentry)
 	.size	startup, . - startup
 	.org	.+512, 0x90
 efihandover64:
-	jmp	efi_linuxentry
+	/* realign the stack */
+	/* and	$~0xf, %rsp */
+	.byte	0x48, 0x83, 0xe4, 0xf0
+	/* save boot_params pointer */
+	/* movq	%rdx, %rbx */
+	.byte 0x48, 0x89, 0xd3
+	call	efi_linuxentry
 	.size	startup, . - startup
 
 	/* Reboot system */
