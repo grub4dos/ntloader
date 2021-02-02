@@ -48,6 +48,8 @@ struct nt_args
   char winload[64];
   char sysroot[32];
 
+  char sb[6];
+
   enum bcd_type type;
   struct bcd_disk_info info;
   void *bcd_data;

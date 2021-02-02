@@ -174,6 +174,13 @@ void process_cmdline (char *cmdline)
       else
         snprintf (args.sysroot, 32, "%s", value);
     }
+    else if (strcmp (key, "secureboot") == 0)
+    {
+      if (! value || ! value[0])
+        snprintf (args.sb, 6, "off");
+      else
+        snprintf (args.sb, 6, "%s", value);
+    }
     else if (key == cmdline)
     {
       /* Ignore unknown initial arguments, which may

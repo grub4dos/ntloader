@@ -1,33 +1,27 @@
 /*
- * Copyright (C) 2014 Michael Brown <mbrown@fensystems.co.uk>.
+ *  ntloader  --  Microsoft Windows NT6+ loader
+ *  Copyright (C) 2021  A1ive.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ *  ntloader is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
+ *  ntloader is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
- * 02110-1301, USA.
- */
-
-/**
- * @file
- *
- * EFI block device
- *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ntloader.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
+#include <wchar.h>
 #include <ntboot.h>
 #include <vdisk.h>
 #include <efi.h>
@@ -366,6 +360,60 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
   return 0;
 }
 
+static EFI_GET_VARIABLE orig_get_variable = NULL;
+static EFI_EXIT_BOOT_SERVICES orig_exit_bs = NULL;
+static UINT8 secureboot_status = 0;
+
+static EFI_STATUS EFIAPI
+efi_get_variable_wrapper (CHAR16 *varname, EFI_GUID *guid,
+                          UINT32 *attr, UINTN *datasize, void *data)
+{
+  wchar_t sb[] = L"SecureBoot";
+  EFI_STATUS status;
+
+  status = orig_get_variable (varname, guid, attr, datasize, data);
+  if (wcscmp (sb, varname) == 0)
+  {
+    if (*datasize)
+      memcpy (data, &secureboot_status, 1);
+    *datasize = 1;
+  }
+  return status;
+}
+
+static EFI_STATUS EFIAPI
+efi_exit_bs_wrapper (EFI_HANDLE image_handle, UINTN map_key)
+{
+  if (orig_get_variable)
+  {
+    efi_systab->RuntimeServices->GetVariable = orig_get_variable;
+    orig_get_variable = NULL;
+  }
+  return orig_exit_bs (image_handle, map_key);
+}
+
+static void
+efi_sb_set (char *sb)
+{
+  if (!efi_systab || !sb || !sb[0])
+    return;
+  if (strcasecmp (sb, "yes") == 0 || strcasecmp (sb, "on") == 0 ||
+      strcasecmp (sb, "true") == 0 || strcasecmp (sb, "1") == 0)
+    secureboot_status = 1;
+  else
+    secureboot_status = 0;
+  DBG ("...set SecureBoot to %d\n", secureboot_status);
+  if (orig_get_variable)
+  {
+    DBG ("GetVariable already installed.\n");
+    return;
+  }
+  orig_get_variable = efi_systab->RuntimeServices->GetVariable;
+  efi_systab->RuntimeServices->GetVariable = efi_get_variable_wrapper;
+  orig_exit_bs = efi_systab->BootServices->ExitBootServices;
+  efi_systab->BootServices->ExitBootServices = efi_exit_bs_wrapper;
+}
+
 /**
  * Boot from EFI device
  *
@@ -384,6 +432,9 @@ void efi_boot (struct vdisk_file *file)
   unsigned int pages;
   EFI_HANDLE handle;
   EFI_STATUS efirc;
+
+  efi_sb_set (nt_cmdline->sb);
+
   /* Allocate memory */
   pages = ((file->len + PAGE_SIZE - 1) / PAGE_SIZE);
   if ((efirc = bs->AllocatePages (AllocateAnyPages,

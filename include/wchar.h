@@ -49,6 +49,7 @@ static inline size_t wcrtomb (char *buf, wchar_t wc,
   return 1;
 }
 
+extern int wcscmp (const wchar_t *str1, const wchar_t *str2);
 extern int wcscasecmp (const wchar_t *str1, const wchar_t *str2);
 extern size_t wcslen (const wchar_t *str);
 extern wchar_t *wcschr (const wchar_t *str, wchar_t c);
