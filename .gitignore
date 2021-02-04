@@ -7,3 +7,5 @@ ntloader
 *.efi
 efireloc
 raw/*
+initrd.cpio
+initrd.lz1
