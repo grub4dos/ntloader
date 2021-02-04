@@ -98,6 +98,8 @@ void process_cmdline (char *cmdline)
       args.text_mode = 1;
     else if (strcmp (key, "quiet") == 0)
       args.quiet = 1;
+    else if (strcmp (key, "linear") == 0)
+      args.linear = 1;
     else if (strcmp (key, "pause") == 0)
     {
       args.pause = 1;

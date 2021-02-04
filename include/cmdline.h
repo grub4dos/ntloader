@@ -36,6 +36,7 @@ struct nt_args
   int pause;
   int pause_quiet;
   int text_mode;
+  int linear;
   char uuid[17];
   char path[256];
   char initrd_path[256];

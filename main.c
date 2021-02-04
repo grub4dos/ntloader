@@ -39,6 +39,7 @@
 #include <cmdline.h>
 #include <biosdisk.h>
 #include <lznt1.h>
+#include <paging.h>
 
 /** Start of our image (defined by linker) */
 extern char _start[];
@@ -77,12 +78,17 @@ enum
  */
 static void call_interrupt_wrapper (struct bootapp_callback_params *params)
 {
+  struct paging_state state;
   uint16_t *attributes;
   /* Handle/modify/pass-through interrupt as required */
   if (params->vector.interrupt == 0x13)
   {
+    /* Enable paging */
+    enable_paging (&state);
     /* Intercept INT 13 calls for the emulated drive */
     emulate_int13 (params);
+    /* Disable paging */
+    disable_paging (&state);
   }
   else if ((params->vector.interrupt == 0x10) &&
            (params->ax == 0x4f01) && (nt_cmdline->text_mode))
@@ -232,6 +238,8 @@ static int add_file (const char *name, void *data, size_t len)
 int main (void)
 {
   struct loaded_pe pe;
+  struct paging_state state;
+  uint64_t initrd_phys;
 
   /* Initialise stack cookie */
   init_cookie ();
@@ -242,6 +250,12 @@ int main (void)
 
   /* Process command line */
   process_cmdline (cmdline);
+
+  /* Initialise paging */
+  init_paging ();
+
+  /* Enable paging */
+  enable_paging (&state);
 
   biosdisk_init ();
   biosdisk_iterate ();
@@ -281,6 +295,11 @@ int main (void)
   /* Load bootmgr.exe into memory */
   if (load_pe (bootmgr->opaque, bootmgr->len, &pe) != 0)
     die ("FATAL: Could not load bootmgr.exe\n");
+
+  /* Relocate initrd */
+  initrd_phys = relocate_memory (initrd, initrd_len);
+  DBG ("Placing initrd at [%p,%p) phys [%#llx,%#llx)\n",
+       initrd, (initrd + initrd_len), initrd_phys, (initrd_phys + initrd_len));
   /* Complete boot application descriptor set */
   bootapps.bootapp.pe_base = pe.base;
   bootapps.bootapp.pe_len = pe.len;
@@ -289,9 +308,14 @@ int main (void)
   bootapps.regions[PE_REGION].start_page = page_start (pe.base);
   bootapps.regions[PE_REGION].num_pages =
           page_len (pe.base, (pe.base + pe.len));
-  bootapps.regions[INITRD_REGION].start_page = page_start (initrd);
+  bootapps.regions[INITRD_REGION].start_page =
+          (initrd_phys / PAGE_SIZE);
   bootapps.regions[INITRD_REGION].num_pages =
           page_len (initrd, initrd + initrd_len);
+
+  /* Disable paging */
+  disable_paging (&state);
+
   /* Jump to PE image */
   DBG ("Entering bootmgr.exe with parameters at %p\n", &bootapps);
   if (nt_cmdline->pause)
