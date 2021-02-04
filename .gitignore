@@ -9,3 +9,4 @@ efireloc
 raw/*
 initrd.cpio
 initrd.lz1
+ntloader.zip
