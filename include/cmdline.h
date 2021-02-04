@@ -49,6 +49,7 @@ struct nt_args
   char sysroot[32];
 
   char sb[6];
+  int bgrt;
 
   enum bcd_type type;
   struct bcd_disk_info info;

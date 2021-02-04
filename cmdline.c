@@ -181,6 +181,8 @@ void process_cmdline (char *cmdline)
       else
         snprintf (args.sb, 6, "%s", value);
     }
+    else if (strcmp (key, "bgrt") == 0)
+      args.bgrt = 1;
     else if (key == cmdline)
     {
       /* Ignore unknown initial arguments, which may

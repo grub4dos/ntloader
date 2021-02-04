@@ -37,6 +37,7 @@
 #include <lznt1.h>
 #include <bcd.h>
 #include <charset.h>
+#include <acpi.h>
 #include <efi/Protocol/BlockIo.h>
 #include <efi/Protocol/DevicePath.h>
 #include <efi/Protocol/GraphicsOutput.h>
@@ -109,6 +110,11 @@ static int efi_add_file (const char *name, void *data, size_t len)
   {
     DBG ("...found bootmgfw.efi file %s\n", name);
     bootmgfw = vdisk_add_file (name, data, len, read_mem_file);;
+  }
+  else if (strcasecmp (name, "bgrt.bmp") == 0 && nt_cmdline->bgrt)
+  {
+    DBG ("...load BGRT bmp image\n");
+    acpi_load_bgrt (data, len);
   }
   else
     vdisk_add_file (name, data, len, read_mem_file);
