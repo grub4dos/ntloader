@@ -124,13 +124,12 @@ kernel /ntloader uuid=%?% winload=/Windows/System32/winload.efi
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd sysroot=/Windows
 ```
-- Hook UEFI `SecureBoot` variable
+- Hook UEFI `SecureBoot` variable (UEFI)
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd secureboot=off
 ```
 - Change the boot logo (UEFI)
     When booting on a UEFI-based computer, Windows may show a vendor-defined logo
-    
      which is stored on the UEFI firmware in a section called Boot Graphics Resource Table (BGRT).
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd bgrt
@@ -147,6 +146,10 @@ kernel /ntloader uuid=%?% file=/xxx.vhd quiet
     For example:
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd text
+```
+- Disable paging (BIOS)
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd linear
 ```
 - Troubleshoot
     You can add the 'pause' command-line option for ntloader.
