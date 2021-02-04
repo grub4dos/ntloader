@@ -128,6 +128,13 @@ kernel /ntloader uuid=%?% file=/xxx.vhd sysroot=/Windows
 ```
 kernel /ntloader uuid=%?% file=/xxx.vhd secureboot=off
 ```
+- Change the boot logo (UEFI)
+    When booting on a UEFI-based computer, Windows may show a vendor-defined logo
+    
+     which is stored on the UEFI firmware in a section called Boot Graphics Resource Table (BGRT).
+```
+kernel /ntloader uuid=%?% file=/xxx.vhd bgrt
+```
 - Disable debug messages
     You can disable debug messages by using the 'quiet' command-line option.
     For example:
