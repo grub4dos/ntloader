@@ -37,6 +37,21 @@ static struct nt_args args;
 
 struct nt_args *nt_cmdline;
 
+static void convert_path (char *str, int backslash)
+{
+  char *p = str;
+  while (*p)
+  {
+    if (*p == '/' && backslash)
+      *p = '\\';
+    if (*p == ':')
+      *p = ' ';
+    if (*p == '\r' || *p == '\n')
+      *p = '\0';
+    p++;
+  }
+}
+
 /**
  * Process command line
  *
@@ -101,6 +116,7 @@ void process_cmdline (char *cmdline)
       if (! value || ! value[0])
         die ("Argument \"file\" needs a value\n");
       strncpy (args.path, value, 256);
+      convert_path (args.path, 1);
       ext = value[strlen (value) - 1];
       if (ext == 'm' || ext == 'M')
         args.type = BOOT_WIM;
@@ -109,21 +125,10 @@ void process_cmdline (char *cmdline)
     }
     else if (strcmp (key, "initrdfile") == 0 || strcmp (key, "initrd") == 0)
     {
-      char *p;
       if (! value || ! value[0])
         die ("Invalid initrd path\n");
       strncpy (args.initrd_path, value, 256);
-      p = args.initrd_path;
-      while (*p)
-      {
-        if (*p == '/')
-          *p = '\\';
-        if (*p == ':')
-          *p = ' ';
-        if (*p == '\r' || *p == '\n')
-          *p = '\0';
-        p++;
-      }
+      convert_path (args.initrd_path, 1);
     }
     else if (strcmp (key, "testmode") == 0)
     {
@@ -158,21 +163,30 @@ void process_cmdline (char *cmdline)
       if (! value || ! value[0])
         snprintf (args.loadopt, 128, "DDISABLE_INTEGRITY_CHECKS");
       else
+      {
         snprintf (args.loadopt, 128, "%s", value);
+        convert_path (args.loadopt, 0);
+      }
     }
     else if (strcmp (key, "winload") == 0)
     {
       if (! value || ! value[0])
         snprintf (args.winload, 64, "\\Windows\\System32\\boot\\winload.efi");
       else
+      {
         snprintf (args.winload, 64, "%s", value);
+        convert_path (args.winload, 1);
+      }
     }
     else if (strcmp (key, "sysroot") == 0)
     {
       if (! value || ! value[0])
         snprintf (args.sysroot, 32, "\\Windows");
       else
+      {
         snprintf (args.sysroot, 32, "%s", value);
+        convert_path (args.sysroot, 1);
+      }
     }
     else if (strcmp (key, "secureboot") == 0)
     {

@@ -74,19 +74,8 @@ static void
 bcd_patch_path (void)
 {
   const char *search = "\\PATH_SIGN";
-  char *p;
   size_t len;
   len = 2 * (strlen (nt_cmdline->path) + 1);
-  /* replace '/' to '\\' */
-  p = nt_cmdline->path;
-  while (*p)
-  {
-    if (*p == '/')
-      *p = '\\';
-    if (*p == ':')
-      *p = ' ';
-    p++;
-  }
   /* UTF-8 to UTF-16le */
   grub_utf8_to_utf16 (nt_cmdline->path16, len,
                       (uint8_t *)nt_cmdline->path, -1, NULL);
