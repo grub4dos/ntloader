@@ -1,0 +1,29 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt install -y -o Acquire::Retries=50 \
+                           binutils-dev libiberty-dev zlib1g-dev python-is-python3 zip
+      - name: Build NTloader
+        run: |
+          make
+      - name: makepkg
+        run: ./makepkg.sh
+      - name: upload
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: ntloader.zip

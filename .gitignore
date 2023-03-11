@@ -1,0 +1,13 @@
+/ntloader
+/ntloader.i386
+/ntloader.zip
+/*.s
+/*.o
+/*.a
+/*.elf
+/*.map
+/*.efi
+/efireloc
+initrd.cpio
+initrd.lz1
+raw/*
