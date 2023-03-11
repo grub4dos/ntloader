@@ -26,20 +26,6 @@ kernel /ntloader uuid=%?_UUID% file=/path/to/winpe.wim
 initrd /initrd.lz1
 ```
 
-- a1ive GRUB2
-```
-menuentry "Boot Windows NT6+ PE" {
-    probe -s dev_uuid -u (hdx,y);
-    if [ "${grub_platform}" = "efi" ];
-    then
-        linuxefi /ntloader uuid=${dev_uuid} file=/path/to/winpe.wim;
-        initrdefi /initrd.lz1;
-    else
-        linux16 /ntloader uuid=${dev_uuid} file=/path/to/winpe.wim;
-        initrd16 /initrd.lz1;
-    fi;
-}
-```
 - GNU GRUB2
 ```
 menuentry "Boot Windows NT6+ PE" {
@@ -155,6 +141,9 @@ You will need to have at least the following packages installed in order to buil
 - gcc
 - binutils
 - make
+- python3
+- libz
+- zip
 
 You can use the following command to create initrd.cpio:
 ```
