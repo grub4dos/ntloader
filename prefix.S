@@ -116,8 +116,8 @@ opt_header:
 	.long	0x200			/* FileAlignment */
 	.word	0			/* MajorOperatingSystemVersion */
 	.word	0			/* MinorOperatingSystemVersion */
-	.word	0			/* MajorImageVersion */
-	.word	0			/* MinorImageVersion */
+	.word	1			/* MajorImageVersion */
+	.word	1			/* MinorImageVersion */
 	.word	0			/* MajorSubsystemVersion */
 	.word	0			/* MinorSubsystemVersion */
 	.long	0			/* Win32VersionValue */
@@ -337,6 +337,7 @@ gdt:
 	.size	gdt, . - gdt
 	.equ	gdt_limit, . - gdt - 1
 
+	.org	0x400
 debug:
 	.long	0			/* Characteristics */
 	.long	0x10d1a884		/* TimeDateStamp */
