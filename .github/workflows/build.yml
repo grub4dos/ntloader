@@ -17,13 +17,12 @@ jobs:
       - name: Build NTloader
         run: |
           make
-      - name: makepkg
+      - name: Create package
         run: ./makepkg.sh
-      - name: upload
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "Development Build"
-          files: ntloader.zip
+      - name: Release
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          gh release delete latest --cleanup-tag --yes
+          gh release create latest ntloader.zip -t "Development Build" -p
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
