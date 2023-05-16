@@ -335,9 +335,7 @@ static void process_reloc (bfd *bfd __unused, asection *section, arelent *rel,
     /* Generate an 8-byte PE relocation */
     generate_pe_reloc (pe_reltab, offset, 8);
   }
-  else if ((strcmp (howto->name, "R_386_32") == 0) ||
-           (strcmp (howto->name, "R_X86_64_32") == 0) ||
-           (strcmp (howto->name, "R_X86_64_32S") == 0))
+  else if (strcmp (howto->name, "R_386_32") == 0)
   {
     /* Generate a 4-byte PE relocation */
     generate_pe_reloc (pe_reltab, offset, 4);
@@ -354,6 +352,12 @@ static void process_reloc (bfd *bfd __unused, asection *section, arelent *rel,
   {
     /* Skip PC-relative relocations; all relative offsets
      * remain unaltered when the object is loaded.
+     */
+  }
+  else if (strcmp (howto->name, "R_X86_64_32") == 0)
+  {
+    /* Ignore 32-bit relocations within BIOS code in
+     * hybrid 32-bit BIOS / 64-bit UEFI binaries.
      */
   }
   else
@@ -374,22 +378,17 @@ static size_t output_pe_reltab (int fd, struct pe_relocs *pe_reltab)
 {
   EFI_IMAGE_BASE_RELOCATION header;
   struct pe_relocs *pe_rel;
-  static uint8_t pad[16];
   unsigned int num_relocs;
   size_t size;
-  size_t pad_size;
   size_t total_size = 0;
   for (pe_rel = pe_reltab ; pe_rel ; pe_rel = pe_rel->next)
   {
     num_relocs = ((pe_rel->used_relocs + 1) & ~1);
     size = (sizeof (header) + (num_relocs * sizeof (uint16_t)));
-    pad_size = ((-size) & (sizeof (pad) - 1));
-    size += pad_size;
     header.VirtualAddress = pe_rel->start_rva;
     header.SizeOfBlock = size;
     xwrite (fd, &header, sizeof (header));
     xwrite (fd, pe_rel->relocs, (num_relocs * sizeof (uint16_t)));
-    xwrite (fd, pad, pad_size);
     total_size += size;
   }
   return total_size;
