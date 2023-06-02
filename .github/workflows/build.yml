@@ -20,6 +20,7 @@ jobs:
       - name: Create package
         run: ./makepkg.sh
       - name: Release
+        continue-on-error: true
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           gh release delete latest --cleanup-tag --yes
