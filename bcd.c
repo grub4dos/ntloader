@@ -79,8 +79,8 @@ bcd_patch_path (void)
   size_t len;
   len = 2 * (strlen (nt_cmdline->path) + 1);
   /* UTF-8 to UTF-16le */
-  grub_utf8_to_utf16 (nt_cmdline->path16, len,
-                      (uint8_t *)nt_cmdline->path, -1, NULL);
+  grub_utf8_to_ucs2 (nt_cmdline->path16, len,
+                     (uint8_t *)nt_cmdline->path, -1, NULL);
 
   bcd_replace_hex (search, strlen (search), nt_cmdline->path16, len, 0);
 }
@@ -147,7 +147,7 @@ bcd_parse_str (reg_hive_t *hive, const wchar_t *keyname,
   hive->query_value_no_copy (hive, key, BCD_REG_HVAL,
                              (void **)&data, &data_len, &type);
   memset (data, 0, data_len);
-  grub_utf8_to_utf16 (data, data_len, (uint8_t *)s, -1, NULL);
+  grub_utf8_to_ucs2 (data, data_len, (uint8_t *)s, -1, NULL);
 }
 
 void
