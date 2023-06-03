@@ -91,18 +91,16 @@ void process_cmdline (char *cmdline)
     }
     /* Process this argument */
     if (strcmp (key, "quiet") == 0)
-      args.quiet = 1;
+      args.flag |= NT_FLAG_QUIET;
     else if (strcmp (key, "win7") == 0)
     {
 #if __x86_64__
-      args.win7 = 1;
+      args.flag |= NT_FLAG_WIN7;
 #endif
     }
     else if (strcmp (key, "pause") == 0)
     {
-      args.pause = 1;
-      if (value && (strcmp (value, "quiet") == 0))
-        args.pause_quiet = 1;
+      args.flag |= NT_FLAG_PAUSE;
     }
     else if (strcmp (key, "uuid") == 0)
     {

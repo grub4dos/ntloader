@@ -208,8 +208,7 @@ static int add_file (const char *name, void *data, size_t len)
     nt_cmdline->bcd_data = data;
     nt_cmdline->bcd_len = len;
     bcd_patch_data ();
-    if (nt_cmdline->pause)
-      pause_boot ();
+    pause_boot ();
   }
   else if (strcasecmp (name, "bcd") == 0)
     DBG ("...skip BCD\n");
@@ -312,8 +311,8 @@ int main (void)
 
   biosdisk_init ();
   biosdisk_iterate ();
-  if (nt_cmdline->pause)
-    pause_boot ();
+
+  pause_boot ();
 
   /* Extract files from initrd */
   extract_initrd (initrd, initrd_len);
@@ -337,8 +336,7 @@ int main (void)
   bootapps.regions[INITRD_REGION].num_pages = page_len (initrd, initrd + initrd_len);
   /* Jump to PE image */
   DBG ("Entering bootmgr.exe with parameters at %p\n", &bootapps);
-  if (nt_cmdline->pause)
-    pause_boot ();
+  pause_boot ();
   pe.entry (&bootapps.bootapp);
   die ("FATAL: bootmgr returned\n");
 }

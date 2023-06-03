@@ -115,7 +115,7 @@ void die (const char *fmt, ...)
   {
     rs = efi_systab->RuntimeServices;
     rs->ResetSystem (EfiResetWarm, 0, 0, NULL);
-    printf ("Failed to reboot\\n");
+    printf ("Failed to reboot\n");
   }
   else
     reboot();
@@ -129,15 +129,11 @@ void die (const char *fmt, ...)
  */
 void pause_boot (void)
 {
-  /* Wait for keypress, prompting unless inhibited */
-  if (nt_cmdline->pause_quiet)
-    getchar();
-  else
-  {
-    printf ("Press any key to continue booting...");
-    getchar();
-    printf ("\n");
-  }
+  if (!(nt_cmdline->flag & NT_FLAG_PAUSE))
+    return;
+  if (!(nt_cmdline->flag & NT_FLAG_QUIET))
+    printf ("Press any key to continue booting...\n");
+  getchar();
 }
 
 static void gotoxy (uint16_t x, uint16_t y)

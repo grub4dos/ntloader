@@ -347,8 +347,7 @@ void efi_boot (struct vdisk_file *file)
     loaded.image->DeviceHandle = efi_vpartition.handle;
   }
   /* Start image */
-  if (nt_cmdline->pause)
-    pause_boot ();
+  pause_boot ();
   if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
     die ("Could not start %s: %#lx\n", file->name, ((unsigned long) efirc));
   die ("%s returned\n", file->name);

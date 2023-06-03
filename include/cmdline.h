@@ -32,11 +32,14 @@
 
 #define MAX_PATH 255
 
+#define NT_FLAG_QUIET     (1 << 0)
+#define NT_FLAG_PAUSE     (1 << 1)
+#define NT_FLAG_WIN7      (1 << 2)
+
 struct nt_args
 {
-  int quiet;
-  int pause;
-  int pause_quiet;
+  uint32_t flag;
+
   char uuid[17];
   char path[MAX_PATH + 1];
 
@@ -53,8 +56,6 @@ struct nt_args
   char loadopt[128];
   char winload[64];
   char sysroot[32];
-
-  int win7;
 
   enum bcd_type type;
   struct bcd_disk_info info;

@@ -141,18 +141,17 @@ static int add_file (const char *name, void *data, size_t len)
     nt_cmdline->bcd_data = data;
     nt_cmdline->bcd_len = len;
     bcd_patch_data ();
-    if (nt_cmdline->pause)
-      pause_boot ();
+    pause_boot ();
   }
   else if (strcasecmp (name, "bcd") == 0)
     DBG ("...skip BCD\n");
-  else if (!nt_cmdline->win7 &&
+  else if (!(nt_cmdline->flag & NT_FLAG_WIN7) &&
            strcasecmp (name, BOOT_FILE_NAME) == 0)
   {
     DBG ("...found bootmgfw.efi file %s\n", name);
     bootmgr = vdisk_add_file (name, data, len, read_mem_file);
   }
-  else if (nt_cmdline->win7 &&
+  else if (nt_cmdline->flag & NT_FLAG_WIN7 &&
            strcasecmp (name, "win7.efi") == 0)
   {
     DBG ("..found win7 efi loader\n");
@@ -311,8 +310,8 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
 
   efidisk_init ();
   efidisk_iterate ();
-  if (nt_cmdline->pause)
-    pause_boot ();
+
+  pause_boot ();
 
   extract_initrd (initrd, initrd_len);
 
