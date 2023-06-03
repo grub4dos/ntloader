@@ -217,9 +217,8 @@ efi_load_sfs_initrd (EFI_HANDLE handle, void **initrd, size_t *initrd_len)
   /* Close file system */
   bs->CloseProtocol (handle, &efi_simple_file_system_protocol_guid,
                      efi_image_handle, NULL);
-  memset (wname, 0 ,sizeof (wname));
-  grub_utf8_to_ucs2 (wname, sizeof (wname),
-                     (uint8_t *)nt_cmdline->initrd_path, -1, NULL);
+  memset (wname, 0, sizeof (wname));
+  utf8_to_ucs2 (wname, MAX_PATH, (uint8_t *)nt_cmdline->initrd_path);
   efirc = root->Open (root, &file, wname, EFI_FILE_MODE_READ, 0);
   if (efirc != EFI_SUCCESS)
     die ("Could not open %ls.\n", wname);
@@ -299,13 +298,13 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
   cmdline = efi_malloc (4 * cmdline_len + 1);
 
   /* Convert command line to ASCII */
-  *grub_ucs2_to_utf8 ((uint8_t *) cmdline, loaded->LoadOptions, cmdline_len) = 0;
+  *ucs2_to_utf8 ((uint8_t *) cmdline, loaded->LoadOptions, cmdline_len) = 0;
 
   /* Process command line */
   process_cmdline (cmdline);
   efi_free (cmdline);
   DBG ("systab=%p image_handle=%p\n", systab, image_handle);
-  if (nt_cmdline->initrd_path[0])
+  if (nt_cmdline->initrd_path)
     efi_load_sfs_initrd (loaded->DeviceHandle, &initrd, &initrd_len);
   else
     efi_load_lf2_initrd (&initrd, &initrd_len);

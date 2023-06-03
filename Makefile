@@ -1,7 +1,7 @@
 VERSION := v2.0.0
 WIMBOOT_VERSION := v2.7.5
 
-OBJECTS := prefix.o startup.o callback.o vsprintf.o string.o
+OBJECTS := prefix.o startup.o callback.o vsprintf.o string.o charset.o
 OBJECTS += int13.o vdisk.o cpio.o stdio.o misc.o memmap.o
 OBJECTS += efiblock.o cmdline.o peloader.o main.o efimain.o efidisk.o
 OBJECTS += msdos.o gpt.o fsuuid.o lznt1.o bcd.o biosdisk.o reg.o

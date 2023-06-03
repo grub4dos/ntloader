@@ -63,6 +63,8 @@ void process_cmdline (char *cmdline)
   /* Do nothing if we have no command line */
   if ((cmdline == NULL) || (cmdline[0] == '\0'))
     return;
+  /* Show command line */
+  printf ("Command line: \"%s\"\n", cmdline);
   /* Parse command line */
   while (*tmp)
   {
@@ -125,7 +127,7 @@ void process_cmdline (char *cmdline)
     {
       if (! value || ! value[0])
         die ("Invalid initrd path\n");
-      strncpy (args.initrd_path, value, 256);
+      args.initrd_path = value;
       convert_path (args.initrd_path, 1);
     }
     else if (strcmp (key, "testmode") == 0)
@@ -225,12 +227,5 @@ void process_cmdline (char *cmdline)
       die ("Unrecognised argument \"%s%s%s\"\n", key,
            (value ? "=" : ""), (value ? value : ""));
     }
-    /* Undo modifications to command line */
-    if (chr)
-      tmp[-1] = chr;
-    if (value)
-      value[-1] = '=';
   }
-  /* Show command line (after parsing "quiet" option) */
-  DBG ("Command line: \"%s\"\n", cmdline);
 }

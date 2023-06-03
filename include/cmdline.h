@@ -30,14 +30,17 @@
 #include <stdint.h>
 #include <bcd.h>
 
+#define MAX_PATH 255
+
 struct nt_args
 {
   int quiet;
   int pause;
   int pause_quiet;
   char uuid[17];
-  char path[256];
-  char initrd_path[256];
+  char path[MAX_PATH + 1];
+
+  char *initrd_path;
 
   char test_mode[6];
   char hires[6];
@@ -57,7 +60,7 @@ struct nt_args
   struct bcd_disk_info info;
   void *bcd_data;
   uint32_t bcd_len;
-  wchar_t path16[256];
+  wchar_t path16[MAX_PATH + 1];
 };
 
 extern struct nt_args *nt_cmdline;
