@@ -1,4 +1,4 @@
-VERSION := v2.0.0
+VERSION := v2.0.1
 WIMBOOT_VERSION := v2.7.5
 
 OBJECTS := prefix.o startup.o callback.o vsprintf.o string.o charset.o
