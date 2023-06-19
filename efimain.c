@@ -301,7 +301,6 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
 
   /* Process command line */
   process_cmdline (cmdline);
-  efi_free (cmdline);
   DBG ("systab=%p image_handle=%p\n", systab, image_handle);
   if (nt_cmdline->initrd_path)
     efi_load_sfs_initrd (loaded->DeviceHandle, &initrd, &initrd_len);
@@ -315,6 +314,7 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
 
   extract_initrd (initrd, initrd_len);
 
+  efi_free (cmdline);
   if (! bootmgr)
     die ("FATAL: no bootmgfw.efi\n");
 
