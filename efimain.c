@@ -163,34 +163,6 @@ static int add_file (const char *name, void *data, size_t len)
 }
 
 static void
-extract_initrd (void *initrd, uint32_t initrd_len)
-{
-  void *dst;
-  ssize_t dst_len;
-  size_t padded_len = 0;
-  /* Extract files from initrd */
-  if (initrd && initrd_len)
-  {
-    DBG ("initrd=%p+0x%x\n", initrd, initrd_len);
-    dst_len = lznt1_decompress (initrd, initrd_len, NULL);
-    if (dst_len < 0)
-    {
-      DBG ("...extracting initrd\n");
-      cpio_extract (initrd, initrd_len, add_file);
-    }
-    else
-    {
-      DBG ("...extracting LZNT1-compressed initrd\n");
-      dst = efi_allocate_pages (BYTES_TO_PAGES (dst_len));
-      lznt1_decompress (initrd, initrd_len, dst);
-      cpio_extract (dst, dst_len, add_file);
-      initrd_len += padded_len;
-      initrd = dst;
-    }
-  }
-}
-
-static void
 efi_load_sfs_initrd (EFI_HANDLE handle, void **initrd, size_t *initrd_len)
 {
   EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
@@ -312,7 +284,13 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,EFI_SYSTEM_TABLE *systab)
 
   pause_boot ();
 
-  extract_initrd (initrd, initrd_len);
+  /* Extract files from initrd */
+  if (initrd && initrd_len)
+  {
+    DBG ("initrd=%p+0x%zx\n", initrd, initrd_len);
+    DBG ("...extracting initrd\n");
+    cpio_extract (initrd, initrd_len, add_file);
+  }
 
   efi_free (cmdline);
   if (! bootmgr)

@@ -23,7 +23,7 @@
 title Boot Windows NT6+ PE
 uuid (hdx,y)
 kernel /ntloader uuid=%?_UUID% file=/path/to/winpe.wim
-initrd /initrd.lz1
+initrd /initrd.cpio
 ```
 
 - GNU GRUB2
@@ -32,10 +32,10 @@ menuentry "Boot Windows NT6+ PE" {
     probe -s dev_uuid -u (hdx,y);
     if [ "${grub_platform}" = "efi" ];
     then
-        chainloader /ntloader initrd=/initrd.lz1 uuid=${dev_uuid} file=/path/to/winpe.wim;
+        chainloader /ntloader initrd=/initrd.cpio uuid=${dev_uuid} file=/path/to/winpe.wim;
     else
         linux16 /ntloader uuid=${dev_uuid} file=/path/to/winpe.wim;
-        initrd16 /initrd.lz1;
+        initrd16 /initrd.cpio;
    fi;
 }
 ```
@@ -47,7 +47,7 @@ menuentry "Boot Windows NT6+ PE" {
 title Boot Windows NT6+
 uuid (hdx,y)
 kernel /ntloader uuid=%?_UUID%
-initrd /initrd.lz1
+initrd /initrd.cpio
 ```
 
 - GNU GRUB2
@@ -56,10 +56,10 @@ menuentry "Boot Windows NT6+" {
     probe -s dev_uuid -u (hdx,y);
     if [ "${grub_platform}" = "efi" ];
     then
-        chainloader /ntloader initrd=/initrd.lz1 uuid=${dev_uuid};
+        chainloader /ntloader initrd=/initrd.cpio uuid=${dev_uuid};
     else
         linux16 /ntloader uuid=${dev_uuid};
-        initrd16 /initrd.lz1;
+        initrd16 /initrd.cpio;
    fi;
 }
 ```
@@ -149,11 +149,6 @@ You can use the following command to create initrd.cpio:
 ```
 cd utils/rootfs
 find * | cpio -o -H newc > ../initrd.cpio
-cd ..
-```
-You can also use lznt1 to compress initrd to reduce its size:
-```
-python lznt1.py initrd.cpio initrd.lz1
 ```
 
 ## License

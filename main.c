@@ -222,37 +222,6 @@ static int add_file (const char *name, void *data, size_t len)
   return 0;
 }
 
-static void
-extract_initrd (void *initrd, uint32_t initrd_len)
-{
-  void *dst;
-  ssize_t dst_len;
-  size_t padded_len = 0;
-  /* Extract files from initrd */
-  if (initrd && initrd_len)
-  {
-    DBG ("initrd=%p+0x%x\n", initrd, initrd_len);
-    dst_len = lznt1_decompress (initrd, initrd_len, NULL);
-    if (dst_len < 0)
-    {
-      DBG ("...extracting initrd\n");
-      cpio_extract (initrd, initrd_len, add_file);
-    }
-    else
-    {
-      DBG ("...extracting LZNT1-compressed initrd\n");
-      padded_len = ((dst_len + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-      if (padded_len + 0x40000 > (intptr_t)initrd)
-        die ("out of memory\n");
-      dst = initrd - padded_len;
-      lznt1_decompress (initrd, initrd_len, dst);
-      cpio_extract (dst, dst_len, add_file);
-      initrd_len += padded_len;
-      initrd = dst;
-    }
-  }
-}
-
 /**
  * Relocate data between 1MB and 2GB if possible
  *
@@ -315,7 +284,9 @@ int main (void)
   pause_boot ();
 
   /* Extract files from initrd */
-  extract_initrd (initrd, initrd_len);
+  DBG ("...extracting initrd\n");
+  cpio_extract (initrd, initrd_len, add_file);
+
   /* Add INT 13 drive */
   callback.drive = initialise_int13 ();
   /* Read bootmgr.exe into memory */
