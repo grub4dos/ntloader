@@ -13,10 +13,13 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y -o Acquire::Retries=50 \
-                           binutils-dev libiberty-dev zlib1g-dev python-is-python3 zip
+                           binutils-dev libiberty-dev zlib1g-dev gcc-mingw-w64 zip
       - name: Build NTloader
         run: |
           make
+      - name: Build fsuuid.exe
+        run: |
+          make fsuuid.exe
       - name: Create package
         run: ./makepkg.sh
       - name: Delete old release

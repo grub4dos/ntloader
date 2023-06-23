@@ -6,6 +6,7 @@ cd ../..
 cp utils/initrd.cpio raw/
 cp ntloader raw/
 cp ntloader.i386 raw/
+cp fsuuid.exe raw/
 cp README.md raw/
 cp LICENSE.txt raw/
 zip -9 -r -j ntloader.zip raw

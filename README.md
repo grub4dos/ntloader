@@ -141,7 +141,6 @@ You will need to have at least the following packages installed in order to buil
 - gcc
 - binutils
 - make
-- python3
 - libz
 - zip
 

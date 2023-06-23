@@ -164,10 +164,20 @@ efireloc : utils/efireloc.c
 
 ###############################################################################
 #
+# fsuuid
+
+FSUUID_CFLAGS := -Wall -Werror -idirafter include/
+
+fsuuid.exe : utils/fsuuid.c
+	i686-w64-mingw32-gcc $(FSUUID_CFLAGS) $< -o $@
+
+###############################################################################
+#
 # Cleanup
 
 clean :
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f efireloc
+	$(RM) -f fsuuid.exe
 	$(RM) -f ntloader ntloader.i386
 	$(RM) -f ntloader.i386.efi ntloader.x86_64.efi

@@ -8,6 +8,7 @@
 /*.map
 /*.efi
 /efireloc
+/fsuuid.exe
 initrd.cpio
 initrd.lz1
 raw/*
