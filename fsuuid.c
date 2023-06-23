@@ -23,57 +23,55 @@
 #include <string.h>
 #include <strings.h>
 #include <fsuuid.h>
+
+#ifdef WIMBOOT_VERSION
 #include <cmdline.h>
 #include <ntboot.h>
+#endif
 
 int
 check_fsuuid (void *disk, uint64_t lba,
               int (*disk_read) (void *disk, uint64_t sector, size_t len, void *buf))
 {
-  uint8_t vbr[512];
+  union volume_boot_record vbr;
   char uuid[17] = " ";
   const char *fs = "-";
-  struct fat_bpb *fat = (void *) vbr;
-  struct exfat_bpb *exfat = (void *) vbr;
-  struct ntfs_bpb *ntfs = (void *) vbr;
   if (!disk_read (disk, lba, sizeof (vbr), &vbr))
   {
     DBG ("invalid partition\n");
     return 0;
   }
-  if (memcmp ((const char *) exfat->oem_name, "EXFAT", 5) == 0)
+  if (memcmp (vbr.exfat.oem_name, "EXFAT", 5) == 0)
   {
     snprintf (uuid, 17, "%04x-%04x",
-              (uint16_t) (exfat->num_serial >> 16), (uint16_t) exfat->num_serial);
+              (uint16_t) (vbr.exfat.num_serial >> 16),
+              (uint16_t) vbr.exfat.num_serial);
     fs = "exFAT";
   }
-  else if (memcmp ((const char *) ntfs->oem_name, "NTFS", 4) == 0)
+  else if (memcmp (vbr.ntfs.oem_name, "NTFS", 4) == 0)
   {
-    snprintf (uuid, 17, "%016llx",(unsigned long long) ntfs->num_serial);
+    snprintf (uuid, 17, "%016llx", (unsigned long long) vbr.ntfs.num_serial);
     fs = "NTFS ";
   }
-  else if (memcmp ((const char *) fat->version_specific.fat12_or_fat16.fstype,
-                   "FAT12", 5) == 0)
+  else if (memcmp (vbr.fat.version.fat12_or_fat16.fstype, "FAT12", 5) == 0)
   {
     snprintf (uuid, 17, "%04x-%04x",
-              (uint16_t) (fat->version_specific.fat12_or_fat16.num_serial >> 16),
-              (uint16_t) fat->version_specific.fat12_or_fat16.num_serial);
+              (uint16_t) (vbr.fat.version.fat12_or_fat16.num_serial >> 16),
+              (uint16_t) vbr.fat.version.fat12_or_fat16.num_serial);
     fs = "FAT12";
   }
-  else if (memcmp ((const char *) fat->version_specific.fat12_or_fat16.fstype,
-                   "FAT16", 5) == 0)
+  else if (memcmp (vbr.fat.version.fat12_or_fat16.fstype, "FAT16", 5) == 0)
   {
     snprintf (uuid, 17, "%04x-%04x",
-              (uint16_t) (fat->version_specific.fat12_or_fat16.num_serial >> 16),
-              (uint16_t) fat->version_specific.fat12_or_fat16.num_serial);
+              (uint16_t) (vbr.fat.version.fat12_or_fat16.num_serial >> 16),
+              (uint16_t) vbr.fat.version.fat12_or_fat16.num_serial);
     fs = "FAT16";
   }
-  else if (memcmp ((const char *) fat->version_specific.fat32.fstype,
-                   "FAT32", 5) == 0)
+  else if (memcmp (vbr.fat.version.fat32.fstype, "FAT32", 5) == 0)
   {
     snprintf (uuid, 17, "%04x-%04x",
-              (uint16_t) (fat->version_specific.fat32.num_serial >> 16),
-              (uint16_t) fat->version_specific.fat32.num_serial);
+              (uint16_t) (vbr.fat.version.fat32.num_serial >> 16),
+              (uint16_t) vbr.fat.version.fat32.num_serial);
     fs = "FAT32";
   }
 

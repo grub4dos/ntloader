@@ -66,7 +66,7 @@ struct fat_bpb
       uint8_t label[11];
       uint8_t fstype[8];
     } __attribute__ ((packed)) fat32;
-  } __attribute__ ((packed)) version_specific;
+  } __attribute__ ((packed)) version;
 } __attribute__ ((packed));
 
 struct exfat_bpb
@@ -115,6 +115,14 @@ struct ntfs_bpb
   int8_t reserved_6[3];
   uint64_t num_serial;
   uint32_t checksum;
+} __attribute__ ((packed));
+
+union volume_boot_record
+{
+  uint8_t raw[512];
+  struct fat_bpb fat;
+  struct exfat_bpb exfat;
+  struct ntfs_bpb ntfs;
 } __attribute__ ((packed));
 
 extern int check_fsuuid (void *disk, uint64_t lba, int (*disk_read)
