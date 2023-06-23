@@ -19,11 +19,16 @@ jobs:
           make
       - name: Create package
         run: ./makepkg.sh
-      - name: Release
+      - name: Delete old release
         continue-on-error: true
         working-directory: ${{env.GITHUB_WORKSPACE}}
         run: |
           gh release delete latest --cleanup-tag --yes
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Release
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
           gh release create latest ntloader.zip -t "Development Build" -p
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
