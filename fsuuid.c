@@ -23,11 +23,8 @@
 #include <string.h>
 #include <strings.h>
 #include <fsuuid.h>
-
-#ifdef WIMBOOT_VERSION
 #include <cmdline.h>
 #include <ntboot.h>
-#endif
 
 int
 check_fsuuid (void *disk, uint64_t lba,
