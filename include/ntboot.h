@@ -104,7 +104,7 @@ static inline unsigned int page_len (const void *start, const void *end)
 #define DBG(...) \
   do \
   { \
-    if ((DEBUG & 1) && (! nt_cmdline->flag & NT_FLAG_QUIET)) \
+    if ((DEBUG & 1) && !(nt_cmdline->flag & NT_FLAG_QUIET)) \
     { \
       printf (__VA_ARGS__); \
     } \
@@ -114,7 +114,7 @@ static inline unsigned int page_len (const void *start, const void *end)
 #define DBG2(...) \
   do \
   { \
-    if ((DEBUG & 2) && (! nt_cmdline->flag & NT_FLAG_QUIET)) \
+    if ((DEBUG & 2) && !(nt_cmdline->flag & NT_FLAG_QUIET)) \
     { \
       printf (__VA_ARGS__); \
     } \
