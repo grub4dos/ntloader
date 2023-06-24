@@ -24,11 +24,6 @@
 #include <string.h>
 #include <reg.h>
 
-#define _CR(RECORD, TYPE, FIELD) \
-    ((TYPE *) ((char *) (RECORD) - (char *) &(((TYPE *) 0)->FIELD)))
-
-#define _offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)NULL)->MEMBER)
-
 #pragma GCC diagnostic ignored "-Wcast-align"
 
 enum reg_bool
@@ -115,13 +110,13 @@ static enum reg_bool check_header(hive_t *h)
 
 static void close_hive (reg_hive_t *this)
 {
-  hive_t *h = _CR(this, hive_t, public);
+  hive_t *h = container_of(this, hive_t, public);
   memset (h, 0, sizeof (hive_t));
 }
 
 static void find_root (reg_hive_t *this, HKEY* key)
 {
-  hive_t *h = _CR(this, hive_t, public);
+  hive_t *h = container_of(this, hive_t, public);
   HBASE_BLOCK *base_block = (HBASE_BLOCK *)h->data;
 
   *key = 0x1000 + base_block->RootCell;
@@ -131,7 +126,7 @@ static reg_err_t
 enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
            uint16_t *name, uint32_t name_len)
 {
-  hive_t *h = _CR(this, hive_t, public);
+  hive_t *h = container_of(this, hive_t, public);
   int32_t size;
   CM_KEY_NODE* nk;
   CM_KEY_FAST_INDEX* lh;
@@ -146,7 +141,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   nk = (CM_KEY_NODE*)((uint8_t*)h->data + key + sizeof(int32_t));
@@ -155,7 +150,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t)
-      + _offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
+      + offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   // FIXME - volatile keys?
@@ -170,7 +165,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_FAST_INDEX, List[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   lh = (CM_KEY_FAST_INDEX*)((uint8_t*)h->data + 0x1000
@@ -179,7 +174,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
   if (lh->Signature != CM_KEY_HASH_LEAF && lh->Signature != CM_KEY_LEAF)
     return REG_ERR_BAD_ARGUMENT;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_FAST_INDEX, List[0])
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0])
       + (lh->Count * sizeof(CM_INDEX)))
     return REG_ERR_BAD_ARGUMENT;
 
@@ -193,7 +188,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   nk2 = (CM_KEY_NODE*)((uint8_t*)h->data + 0x1000
@@ -203,7 +198,7 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t) 
-      + _offsetof(CM_KEY_NODE, Name[0]) + nk2->NameLength)
+      + offsetof(CM_KEY_NODE, Name[0]) + nk2->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   if (nk2->Flags & KEY_COMP_NAME)
@@ -253,7 +248,7 @@ find_child_key (hive_t* h, HKEY parent,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   nk = (CM_KEY_NODE*)((uint8_t*)h->data + parent + sizeof(int32_t));
@@ -262,7 +257,7 @@ find_child_key (hive_t* h, HKEY parent,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t)
-      + _offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
+      + offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   if (nk->SubKeyCount == 0 || nk->SubKeyList == 0xffffffff)
@@ -275,7 +270,7 @@ find_child_key (hive_t* h, HKEY parent,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_FAST_INDEX, List[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   lh = (CM_KEY_FAST_INDEX*)((uint8_t*)h->data + 0x1000
@@ -285,7 +280,7 @@ find_child_key (hive_t* h, HKEY parent,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t)
-      + _offsetof(CM_KEY_FAST_INDEX, List[0]) + (lh->Count * sizeof(CM_INDEX)))
+      + offsetof(CM_KEY_FAST_INDEX, List[0]) + (lh->Count * sizeof(CM_INDEX)))
     return REG_ERR_BAD_ARGUMENT;
 
   // FIXME - check against hashes
@@ -297,7 +292,7 @@ find_child_key (hive_t* h, HKEY parent,
     if (size < 0)
       continue;
 
-    if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
       continue;
 
     nk2 = (CM_KEY_NODE*)((uint8_t*)h->data
@@ -307,7 +302,7 @@ find_child_key (hive_t* h, HKEY parent,
       continue;
 
     if ((uint32_t)size < sizeof(int32_t)
-        + _offsetof(CM_KEY_NODE, Name[0]) + nk2->NameLength)
+        + offsetof(CM_KEY_NODE, Name[0]) + nk2->NameLength)
       continue;
 
     // FIXME - use string protocol here to do comparison properly?
@@ -368,7 +363,7 @@ static reg_err_t
 find_key (reg_hive_t* this, HKEY parent, const uint16_t* path, HKEY* key)
 {
   reg_err_t errno;
-  hive_t* h = _CR(this, hive_t, public);
+  hive_t* h = container_of(this, hive_t, public);
   size_t nblen;
   HKEY k;
 
@@ -400,7 +395,7 @@ static reg_err_t
 enum_values (reg_hive_t *this, HKEY key,
              uint32_t index, uint16_t* name, uint32_t name_len, uint32_t* type)
 {
-  hive_t* h = _CR(this, hive_t, public);
+  hive_t* h = container_of(this, hive_t, public);
   int32_t size;
   CM_KEY_NODE* nk;
   uint32_t* list;
@@ -413,7 +408,7 @@ enum_values (reg_hive_t *this, HKEY key,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   nk = (CM_KEY_NODE*)((uint8_t*)h->data + key + sizeof(int32_t));
@@ -422,7 +417,7 @@ enum_values (reg_hive_t *this, HKEY key,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t) 
-      + _offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
+      + offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   if (index >= nk->ValuesCount || nk->Values == 0xffffffff)
@@ -445,7 +440,7 @@ enum_values (reg_hive_t *this, HKEY key,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_VALUE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_VALUE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   vk = (CM_KEY_VALUE*)((uint8_t*)h->data + 0x1000 + list[index] + sizeof(int32_t));
@@ -454,7 +449,7 @@ enum_values (reg_hive_t *this, HKEY key,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t)
-      + _offsetof(CM_KEY_VALUE, Name[0]) + vk->NameLength)
+      + offsetof(CM_KEY_VALUE, Name[0]) + vk->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   if (vk->Flags & VALUE_COMP_NAME)
@@ -495,7 +490,7 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
                      const uint16_t* name, void** data,
                      uint32_t* data_len, uint32_t* type)
 {
-  hive_t* h = _CR(this, hive_t, public);
+  hive_t* h = container_of(this, hive_t, public);
   int32_t size;
   CM_KEY_NODE* nk;
   uint32_t* list;
@@ -507,7 +502,7 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return REG_ERR_BAD_ARGUMENT;
 
   nk = (CM_KEY_NODE*)((uint8_t*)h->data + key + sizeof(int32_t));
@@ -516,7 +511,7 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
     return REG_ERR_BAD_ARGUMENT;
 
   if ((uint32_t)size < sizeof(int32_t)
-      + _offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
+      + offsetof(CM_KEY_NODE, Name[0]) + nk->NameLength)
     return REG_ERR_BAD_ARGUMENT;
 
   if (nk->ValuesCount == 0 || nk->Values == 0xffffffff)
@@ -543,7 +538,7 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
     if (size < 0)
       continue;
 
-    if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_VALUE, Name[0]))
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_VALUE, Name[0]))
       continue;
 
     vk = (CM_KEY_VALUE*)((uint8_t*)h->data + 0x1000 + list[i] + sizeof(int32_t));
@@ -551,7 +546,7 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
       continue;
 
     if ((uint32_t)size < sizeof(int32_t)
-        + _offsetof(CM_KEY_VALUE, Name[0]) + vk->NameLength)
+        + offsetof(CM_KEY_VALUE, Name[0]) + vk->NameLength)
       continue;
 
     if (vk->Flags & VALUE_COMP_NAME)
@@ -653,7 +648,7 @@ query_value (reg_hive_t *this, HKEY key,
 static void
 steal_data (reg_hive_t *this, void** data, uint32_t* size)
 {
-  hive_t* h = _CR(this, hive_t, public);
+  hive_t* h = container_of(this, hive_t, public);
   *data = h->data;
   *size = h->size;
   h->data = NULL;
@@ -671,7 +666,7 @@ static void clear_volatile (hive_t* h, HKEY key)
   if (size < 0)
     return;
 
-  if ((uint32_t)size < sizeof(int32_t) + _offsetof(CM_KEY_NODE, Name[0]))
+  if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
     return;
 
   nk = (CM_KEY_NODE*)((uint8_t*)h->data + key + sizeof(int32_t));

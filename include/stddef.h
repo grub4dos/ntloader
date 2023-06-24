@@ -31,10 +31,12 @@
 
 #define NULL ( ( void * ) 0 )
 
-#define offsetof( type, member ) ( ( size_t ) &( ( type * ) NULL )->member )
+#define offsetof( __type, __member ) ( ( size_t ) &( ( __type * ) NULL )->__member )
 
-#define container_of( ptr, type, member ) ( {       \
-    const typeof ( ( ( type * ) NULL )->member ) *__mptr = (ptr); \
-    ( type * ) ( ( void * ) __mptr - offsetof ( type, member ) ); } )
+#define container_of( __ptr, __type, __member ) \
+    ( { \
+        const typeof ( ( ( __type * ) NULL )->__member ) *__mptr = (__ptr); \
+        ( __type * ) ( ( void * ) __mptr - offsetof ( __type, __member ) ); \
+    } )
 
 #endif /* _STDDEF_H */
