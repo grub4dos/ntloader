@@ -24,8 +24,6 @@
 #include <string.h>
 #include <reg.h>
 
-#pragma GCC diagnostic ignored "-Wcast-align"
-
 enum reg_bool
 {
   false = 0,
@@ -754,5 +752,3 @@ open_hive (void *file, size_t len, reg_hive_t **hive)
 
   return REG_ERR_NONE;
 }
-
-#pragma GCC diagnostic error "-Wcast-align"
