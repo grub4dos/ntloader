@@ -192,7 +192,6 @@ static union vdisk_directory_entry *
   uint8_t *checksum_data;
   uint8_t checksum;
   unsigned int sequence;
-  uint16_t *lfn_char;
   char c;
   unsigned int i;
   /* Populate directory entry (with invalid 8.3 filename) */
@@ -214,7 +213,7 @@ static union vdisk_directory_entry *
     checksum = ((((checksum & 1) << 7) | (checksum >> 1)) + * (checksum_data++));
   }
   /* Construct long filename record */
-  lfn_char = &lfn->lfn.name_1[0];
+  i = 0;
   sequence = 1;
   while (1)
   {
@@ -230,26 +229,19 @@ static union vdisk_directory_entry *
     }
     /* Add character to long filename */
     c = * (name++);
-    *lfn_char = c;
+    if (i <= 4)
+      lfn->lfn.name_1[i] = c;
+    else if (i <= 10)
+      lfn->lfn.name_2[i - 5] = c;
+    else if (i <= 12)
+      lfn->lfn.name_3[i - 11] = c;
     if (! c)
       break;
-    /* Move to next character within long filename */
-    if (lfn_char == &lfn->lfn.name_1[4])
+    i++;
+    if (i >= 13)
     {
-      lfn_char = &lfn->lfn.name_2[0];
-    }
-    else if (lfn_char == &lfn->lfn.name_2[5])
-    {
-      lfn_char = &lfn->lfn.name_3[0];
-    }
-    else if (lfn_char == &lfn->lfn.name_3[1])
-    {
+      i = 0;
       lfn--;
-      lfn_char = &lfn->lfn.name_1[0];
-    }
-    else
-    {
-      lfn_char++;
     }
   }
   lfn->lfn.sequence |= VDISK_LFN_END;
