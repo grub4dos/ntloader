@@ -109,7 +109,7 @@ struct msdos_part_mbr
   uint32_t sectors_per_fat32;/* FAT32=non-zero, NTFS=any, FAT12/16=any */
   uint64_t total_sectors_long_long;/* NTFS=non-zero, FAT12/16/32=any */
   char dummy2[392];
-  uint8_t unique_signature[4];
+  uint32_t unique_signature;
   uint8_t unknown[2];
 
   /* Four partition entries.  */

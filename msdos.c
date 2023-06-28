@@ -36,7 +36,6 @@ check_mbr (void *disk, uint32_t start_lba, int (*disk_read)
   int i;
   struct msdos_part_mbr mbr;
   uint64_t start_addr;
-  uint32_t signature;
 
   if (!disk_read (disk, start_lba, sizeof (mbr), &mbr))
     return 0;
@@ -70,11 +69,10 @@ check_mbr (void *disk, uint32_t start_lba, int (*disk_read)
     if (check_fsuuid (disk, start_lba + mbr.entries[i].start, disk_read))
     {
       start_addr = ((uint64_t) mbr.entries[i].start + start_lba) << 9;
-      signature = *(uint32_t *)mbr.unique_signature;
-      DBG ("MBR Start=0x%llx Signature=%04X\n", start_addr, signature);
+      DBG ("MBR Start=0x%llx Signature=%04X\n", start_addr, mbr.unique_signature);
       memcpy (nt_cmdline->info.partid, &start_addr, sizeof (start_addr));
       nt_cmdline->info.partmap = 0x01;
-      memcpy (nt_cmdline->info.diskid, &signature, sizeof (signature));
+      memcpy (nt_cmdline->info.diskid, &mbr.unique_signature, sizeof (uint32_t));
       return 1;
     }
   }

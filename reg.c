@@ -39,6 +39,14 @@ reg_wcslen (const uint16_t *s)
   return i;
 }
 
+static inline int32_t
+reg_get_int32_size (uint8_t *data, uint64_t offset)
+{
+  int32_t ret;
+  memcpy (&ret, data + offset, sizeof (int32_t));
+  return -ret;
+}
+
 static enum reg_bool check_header(hive_t *h)
 {
   HBASE_BLOCK* base_block = (HBASE_BLOCK*)h->data;
@@ -134,7 +142,8 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
   // FIXME - make sure no buffer overruns (here and elsewhere)
   // find parent key node
 
-  size = -*(int32_t*)((uint8_t*)h->data + key);
+  // size = -*(int32_t*)((uint8_t*)h->data + key);
+  size = reg_get_int32_size (h->data, key);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -158,7 +167,8 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
 
   // go to key index
 
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  size = reg_get_int32_size (h->data, 0x1000 + nk->SubKeyList);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -181,7 +191,8 @@ enum_keys (reg_hive_t *this, HKEY key, uint32_t index,
 
   // find child key node
 
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + lh->List[index].Cell);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + lh->List[index].Cell);
+  size = reg_get_int32_size (h->data, 0x1000 + lh->List[index].Cell);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -241,7 +252,8 @@ find_child_key (hive_t* h, HKEY parent,
   CM_KEY_FAST_INDEX* lh;
 
   // find parent key node
-  size = -*(int32_t*)((uint8_t*)h->data + parent);
+  //size = -*(int32_t*)((uint8_t*)h->data + parent);
+  size = reg_get_int32_size (h->data, parent);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -263,7 +275,8 @@ find_child_key (hive_t* h, HKEY parent,
 
   // go to key index
 
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  size = reg_get_int32_size (h->data, 0x1000 + nk->SubKeyList);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -286,7 +299,8 @@ find_child_key (hive_t* h, HKEY parent,
   for (unsigned int i = 0; i < lh->Count; i++)
   {
     CM_KEY_NODE* nk2;
-    size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + lh->List[i].Cell);
+    //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + lh->List[i].Cell);
+    size = reg_get_int32_size (h->data, 0x1000 + lh->List[i].Cell);
     if (size < 0)
       continue;
 
@@ -401,7 +415,8 @@ enum_values (reg_hive_t *this, HKEY key,
   enum reg_bool overflow = false;
 
   // find key node
-  size = -*(int32_t*)((uint8_t*)h->data + key);
+  //size = -*(int32_t*)((uint8_t*)h->data + key);
+  size = reg_get_int32_size (h->data, key);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -422,7 +437,8 @@ enum_values (reg_hive_t *this, HKEY key,
     return REG_ERR_FILE_NOT_FOUND;
 
   // go to key index
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->Values);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->Values);
+  size = reg_get_int32_size (h->data, 0x1000 + nk->Values);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -430,10 +446,11 @@ enum_values (reg_hive_t *this, HKEY key,
   if ((uint32_t)size < sizeof(int32_t) + (sizeof(uint32_t) * nk->ValuesCount))
     return REG_ERR_BAD_ARGUMENT;
 
-  list = (uint32_t*)((uint8_t*)h->data + 0x1000 + nk->Values + sizeof(int32_t));
+  list = (uint32_t*)(void*)((uint8_t*)h->data + 0x1000 + nk->Values + sizeof(int32_t));
 
   // find value node
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + list[index]);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + list[index]);
+  size = reg_get_int32_size (h->data, 0x1000 + list[index]);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -495,7 +512,8 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
   unsigned int namelen = reg_wcslen(name);
 
   // find key node
-  size = -*(int32_t*)((uint8_t*)h->data + key);
+  //size = -*(int32_t*)((uint8_t*)h->data + key);
+  size = reg_get_int32_size (h->data, key);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -517,7 +535,8 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
 
   // go to key index
 
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->Values);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->Values);
+  size = reg_get_int32_size (h->data, 0x1000 + nk->Values);
 
   if (size < 0)
     return REG_ERR_FILE_NOT_FOUND;
@@ -525,13 +544,14 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
   if ((uint32_t)size < sizeof(int32_t) + (sizeof(uint32_t) * nk->ValuesCount))
     return REG_ERR_BAD_ARGUMENT;
 
-  list = (uint32_t*)((uint8_t*)h->data + 0x1000 + nk->Values + sizeof(int32_t));
+  list = (uint32_t*)(void*)((uint8_t*)h->data + 0x1000 + nk->Values + sizeof(int32_t));
 
   // find value node
   for (unsigned int i = 0; i < nk->ValuesCount; i++)
   {
     CM_KEY_VALUE* vk;
-    size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + list[i]);
+    //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + list[i]);
+    size = reg_get_int32_size (h->data, 0x1000 + list[i]);
 
     if (size < 0)
       continue;
@@ -603,7 +623,8 @@ query_value_no_copy (reg_hive_t *this, HKEY key,
     }
     else
     {
-      size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + vk->Data);
+      //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + vk->Data);
+      size = reg_get_int32_size (h->data, 0x1000 + vk->Data);
 
       if ((uint32_t)size < vk->DataLength)
         return REG_ERR_BAD_ARGUMENT;
@@ -659,7 +680,8 @@ static void clear_volatile (hive_t* h, HKEY key)
   CM_KEY_NODE* nk;
   uint16_t sig;
 
-  size = -*(int32_t*)((uint8_t*)h->data + key);
+  //size = -*(int32_t*)((uint8_t*)h->data + key);
+  size = reg_get_int32_size (h->data, key);
 
   if (size < 0)
     return;
@@ -678,9 +700,11 @@ static void clear_volatile (hive_t* h, HKEY key)
   if (nk->SubKeyCount == 0 || nk->SubKeyList == 0xffffffff)
     return;
 
-  size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  //size = -*(int32_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList);
+  size = reg_get_int32_size (h->data, 0x1000 + nk->SubKeyList);
 
-  sig = *(uint16_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList + sizeof(int32_t));
+  //sig = *(uint16_t*)((uint8_t*)h->data + 0x1000 + nk->SubKeyList + sizeof(int32_t));
+  memcpy (&sig, (uint8_t*)h->data + 0x1000 + nk->SubKeyList + sizeof(int32_t), sizeof(uint16_t));
 
   if (sig == CM_KEY_HASH_LEAF)
   {
