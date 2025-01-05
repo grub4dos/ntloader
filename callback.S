@@ -47,8 +47,8 @@
 /** Paging bit in CR0 */
 #define CR0_PG 0x80000000
 
-	.arch	i386
 	.code32
+	.arch	i386
 
 	/* Call an arbitrary real-mode function */
 	.section ".text", "ax", @progbits
