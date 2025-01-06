@@ -9,3 +9,6 @@ ntloader
 *.cab
 elf2efi32
 elf2efi64
+ntloader.i386
+ntloader.arm64
+ntloader.x86_64

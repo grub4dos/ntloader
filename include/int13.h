@@ -27,9 +27,33 @@
  *
  */
 
+/** Absolute Pointer
+ * The ABS_PTR() macro borrows the idea from Linux kernel of using
+ * RELOC_HIDE() macro to stop GCC from checking the result of pointer arithmetic
+ * and also it's conversion to be inside the symbol's boundary [1]. The check
+ * is sometimes false positive, especially it is controversial to emit the array
+ * bounds [-Warray-bounds] warning on all hardwired literal pointers since GCC
+ * 11/12 [2]. Unless a good solution can be settled, for the time being we
+ * would be in favor of the macro instead of GCC pragmas which cannot match the
+ * places the warning needs to be ignored in an exact way.
+ *
+ * [1] https://lists.linuxcoding.com/kernel/2006-q3/msg17979.html
+ * [2] https://gcc.gnu.org/bugzilla/show_bug.cgi?id=99578
+ */
+#if defined(__GNUC__)
+# define ABS_PTR( val ) \
+({ \
+	intptr_t __ptr; \
+	asm ( "" : "=r" ( __ptr ) : "0" ( ( void * ) ( intptr_t ) ( val ) ) ); \
+	( void * ) ( __ptr ); \
+})
+#else
+# define ABS_PTR(val) ( ( void * ) ( intptr_t ) ( val ) )
+#endif
+
 /** Construct a pointer from a real-mode segment:offset address */
 #define REAL_PTR( segment, offset ) \
-	( ( void * ) ( intptr_t ) ( ( (segment) << 4 ) + offset ) )
+	( ABS_PTR ( ( (segment) << 4 ) + offset ) )
 
 /** Get drive parameters */
 #define INT13_GET_PARAMETERS		0x08

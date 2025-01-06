@@ -148,10 +148,6 @@ CFLAGS_CFI	= $(call CFLAGS_TEST,$(1),-fno-dwarf2-cfi-asm \
 #
 CFLAGS_WNAPM	= $(call CFLAGS_TEST,$(1),-Wno-address-of-packed-member)
 
-# Inhibit spurious warnings from array bounds checking
-#
-CFLAGS_WNAB	= $(call CFLAGS_TEST,$(1),-Wno-array-bounds)
-
 # Inhibit LTO
 #
 CFLAGS_NLTO	= $(call CFLAGS_TEST,$(1),-fno-lto)
