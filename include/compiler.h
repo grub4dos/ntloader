@@ -35,9 +35,14 @@
  * since it also affects symbols marked with "extern".
  */
 #ifndef ASSEMBLY
-  #if __GNUC__ >= 4
-    #pragma GCC visibility push(hidden)
-  #endif
+#if __GNUC__ >= 4
+#pragma GCC visibility push(hidden)
+#endif
 #endif /* ASSEMBLY */
+
+#define FILE_LICENCE(x)
+
+/* Mark parameter as unused */
+#define __unused __attribute__ (( unused ))
 
 #endif /* _COMPILER_H */

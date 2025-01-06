@@ -31,33 +31,8 @@
 #include "efi/Protocol/BlockIo.h"
 #include "efi/Protocol/DevicePath.h"
 
-/**
- * Initialise device path
- *
- * @v name    Variable name
- * @v type    Type
- * @v subtype   Subtype
- */
-#define EFI_DEVPATH_INIT(name, type, subtype) \
-  { \
-    .Type = (type), \
-    .SubType = (subtype), \
-    .Length[0] = (sizeof (name) & 0xff), \
-    .Length[1] = (sizeof (name) >> 8), \
-  }
+extern void efi_install ( EFI_HANDLE *vdisk, EFI_HANDLE *vpartition );
 
-/**
- * Initialise device path end
- *
- * @v name    Variable name
- */
-#define EFI_DEVPATH_END_INIT(name) \
-  EFI_DEVPATH_INIT (name, END_DEVICE_PATH_TYPE, END_ENTIRE_DEVICE_PATH_SUBTYPE)
-
-struct vdisk_file;
-
-extern void efi_install (void);
-
-extern void efi_boot (struct vdisk_file *file);
+extern EFI_DEVICE_PATH_PROTOCOL *bootmgfw_path;
 
 #endif /* _EFIBLOCK_H */

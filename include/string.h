@@ -29,20 +29,11 @@
 
 #include <stdint.h>
 
-extern void * memmove (void *dest, const void *src, size_t len);
-#define memcpy memmove
-extern void *memset (void *dest, int c, size_t len);
-extern int memcmp (const void *src1, const void *src2, size_t len);
-extern int strcmp (const char *str1, const char *str2);
-extern size_t strlen (const char *str);
-
-static inline char *
-strncpy (char *dest, const char *src, int c)
-{
-  char *p = dest;
-  while ((*p++ = *src++) != '\0' && --c)
-    ;
-  return dest;
-}
+extern void * memcpy ( void *dest, const void *src, size_t len );
+extern void * memmove ( void *dest, const void *src, size_t len );
+extern void * memset ( void *dest, int c, size_t len );
+extern int memcmp ( const void *src1, const void *src2, size_t len );
+extern int strcmp ( const char *str1, const char *str2 );
+extern size_t strlen ( const char *str );
 
 #endif /* _STRING_H */

@@ -33,17 +33,16 @@
 #define E820_SMAP 0x534d4150
 
 /** An INT 15,e820 memory map entry */
-struct e820_entry
-{
-  /** Start of region */
-  uint64_t start;
-  /** Length of region */
-  uint64_t len;
-  /** Type of region */
-  uint32_t type;
-  /** Extended attributes (optional) */
-  uint32_t attrs;
-} __attribute__ ((packed));
+struct e820_entry {
+	/** Start of region */
+	uint64_t start;
+	/** Length of region */
+	uint64_t len;
+	/** Type of region */
+	uint32_t type;
+	/** Extended attributes (optional) */
+	uint32_t attrs;
+} __attribute__ (( packed ));
 
 /** Normal RAM */
 #define E820_TYPE_RAM 1
@@ -54,6 +53,6 @@ struct e820_entry
 /** Region is non-volatile memory (if extended attributes are present) */
 #define E820_ATTR_NONVOLATILE 0x00000002UL
 
-extern struct e820_entry *memmap_next (struct e820_entry *prev);
+extern struct e820_entry * memmap_next ( struct e820_entry *prev );
 
 #endif /* _MEMMAP_H */

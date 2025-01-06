@@ -27,45 +27,14 @@
  *
  */
 
-#include <stdint.h>
-#include <bcd.h>
-
-#define MAX_PATH 255
-
-#define NT_FLAG_QUIET     (1 << 0)
-#define NT_FLAG_PAUSE     (1 << 1)
-#define NT_FLAG_WIN7      (1 << 2)
-
-struct nt_args
-{
-  uint32_t flag;
-
-  char uuid[17];
-  char path[MAX_PATH + 1];
-
-  char *initrd_path;
-
-  char test_mode[6];
-  char hires[6];
-  char detecthal[6];
-  char minint[6];
-  char novesa[6];
-  char novga[6];
-  char nx[10];
-  char pae[8];
-  char loadopt[128];
-  char winload[64];
-  char sysroot[32];
-
-  enum bcd_type type;
-  struct bcd_disk_info info;
-  void *bcd_data;
-  uint32_t bcd_len;
-  wchar_t path16[MAX_PATH + 1];
-};
-
-extern struct nt_args *nt_cmdline;
-
-extern void process_cmdline (char *cmdline);
+extern int cmdline_rawbcd;
+extern int cmdline_rawwim;
+extern int cmdline_quiet;
+extern int cmdline_gui;
+extern int cmdline_pause;
+extern int cmdline_pause_quiet;
+extern int cmdline_linear;
+extern unsigned int cmdline_index;
+extern void process_cmdline ( char *cmdline );
 
 #endif /* _CMDLINE_H */

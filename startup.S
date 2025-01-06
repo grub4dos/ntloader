@@ -24,15 +24,19 @@
  *
  */
 
-#include <ntboot.h>
+#include "ntloader.h"
 
 #define WARM_REBOOT_FLAG 0x0472
 #define WARM_REBOOT_MAGIC 0x1234
 #define KC_CMD 0x64
 #define KC_CMD_RESET 0xfe
 
-	.arch	i386
+	.section ".note.GNU-stack", "", @progbits
+
+#if defined(__i386__) || defined(__x86_64__)
+
 	.code32
+	.arch	i386
 
 	/* Startup code */
 	.section ".text", "ax", @progbits
@@ -126,3 +130,5 @@ _stack:
 	.space	( 64 * 1024 )
 	.size	_stack, . - _stack
 _estack:
+
+#endif /* defined(__i386__) || defined(__x86_64__) */
