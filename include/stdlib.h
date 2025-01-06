@@ -27,6 +27,6 @@
  *
  */
 
-extern unsigned long strtoul ( const char *nptr, char **endptr, int base );
+extern unsigned long strtoul (const char *nptr, char **endptr, int base);
 
 #endif /* _STDLIB_H */

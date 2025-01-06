@@ -27,6 +27,6 @@
  *
  */
 
-extern void pause ( void );
+extern void pause (void);
 
 #endif /* _PAUSE_H */

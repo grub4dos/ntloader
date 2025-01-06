@@ -39,9 +39,10 @@
 static EFI_OPEN_PROTOCOL orig_open_protocol;
 
 /** Dummy "opening graphics output protocol blocked once" protocol GUID */
-static EFI_GUID efi_graphics_output_protocol_blocked_guid = {
-	0xbd1598bf, 0x8e65, 0x47e0,
-	{ 0x80, 0x01, 0xe4, 0x62, 0x4c, 0xab, 0xa4, 0x7f }
+static EFI_GUID efi_graphics_output_protocol_blocked_guid =
+{
+    0xbd1598bf, 0x8e65, 0x47e0,
+    { 0x80, 0x01, 0xe4, 0x62, 0x4c, 0xab, 0xa4, 0x7f }
 };
 
 /** Dummy "opening graphics output protocol blocked once" protocol instance */
@@ -59,39 +60,40 @@ static uint8_t efi_graphics_output_protocol_blocked;
  * @ret efirc		EFI status code
  */
 static EFI_STATUS EFIAPI
-efi_open_protocol_wrapper ( EFI_HANDLE handle, EFI_GUID *protocol,
-			    VOID **interface, EFI_HANDLE agent_handle,
-			    EFI_HANDLE controller_handle, UINT32 attributes ) {
-	EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-	EFI_STATUS efirc;
+efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
+                            VOID **interface, EFI_HANDLE agent_handle,
+                            EFI_HANDLE controller_handle, UINT32 attributes)
+{
+    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
+    EFI_STATUS efirc;
 
-	/* Open the protocol */
-	if ( ( efirc = orig_open_protocol ( handle, protocol, interface,
-					    agent_handle, controller_handle,
-					    attributes ) ) != 0 ) {
-		return efirc;
-	}
+    /* Open the protocol */
+    if ((efirc = orig_open_protocol (handle, protocol, interface,
+                                        agent_handle, controller_handle,
+                                        attributes)) != 0)
+        return efirc;
 
-	/* Block first attempt by bootmgfw.efi to open each
-	 * EFI_GRAPHICS_OUTPUT_PROTOCOL.  This forces error messages
-	 * to be displayed in text mode (thereby avoiding the totally
-	 * blank error screen if the fonts are missing).  We must
-	 * allow subsequent attempts to succeed, otherwise the OS will
-	 * fail to boot.
-	 */
-	if ( ( memcmp ( protocol, &efi_graphics_output_protocol_guid,
-			sizeof ( *protocol ) ) == 0 ) &&
-	     ( bs->InstallMultipleProtocolInterfaces (
-			&handle,
-			&efi_graphics_output_protocol_blocked_guid,
-			&efi_graphics_output_protocol_blocked,
-			NULL ) == 0 ) &&
-	     ( ! cmdline_gui ) ) {
-		DBG ( "Forcing text mode output\n" );
-		return EFI_INVALID_PARAMETER;
-	}
+    /* Block first attempt by bootmgfw.efi to open each
+     * EFI_GRAPHICS_OUTPUT_PROTOCOL.  This forces error messages
+     * to be displayed in text mode (thereby avoiding the totally
+     * blank error screen if the fonts are missing).  We must
+     * allow subsequent attempts to succeed, otherwise the OS will
+     * fail to boot.
+     */
+    if ((memcmp (protocol, &efi_graphics_output_protocol_guid,
+                    sizeof (*protocol)) == 0) &&
+         (bs->InstallMultipleProtocolInterfaces (
+               &handle,
+               &efi_graphics_output_protocol_blocked_guid,
+               &efi_graphics_output_protocol_blocked,
+               NULL) == 0) &&
+         (! cmdline_gui))
+    {
+        DBG ("Forcing text mode output\n");
+        return EFI_INVALID_PARAMETER;
+    }
 
-	return 0;
+    return 0;
 }
 
 /**
@@ -101,71 +103,78 @@ efi_open_protocol_wrapper ( EFI_HANDLE handle, EFI_GUID *protocol,
  * @v path		Device path
  * @v device		Device handle
  */
-void efi_boot ( struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
-		EFI_HANDLE device ) {
-	EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-	union {
-		EFI_LOADED_IMAGE_PROTOCOL *image;
-		void *intf;
-	} loaded;
-	EFI_PHYSICAL_ADDRESS phys;
-	void *data;
-	unsigned int pages;
-	EFI_HANDLE handle;
-	EFI_STATUS efirc;
+void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
+                EFI_HANDLE device)
+{
+    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
+    union
+    {
+        EFI_LOADED_IMAGE_PROTOCOL *image;
+        void *intf;
+    } loaded;
+    EFI_PHYSICAL_ADDRESS phys;
+    void *data;
+    unsigned int pages;
+    EFI_HANDLE handle;
+    EFI_STATUS efirc;
 
-	/* Allocate memory */
-	pages = ( ( file->len + PAGE_SIZE - 1 ) / PAGE_SIZE );
-	if ( ( efirc = bs->AllocatePages ( AllocateAnyPages,
-					   EfiBootServicesData, pages,
-					   &phys ) ) != 0 ) {
-		die ( "Could not allocate %d pages: %#lx\n",
-		      pages, ( ( unsigned long ) efirc ) );
-	}
-	data = ( ( void * ) ( intptr_t ) phys );
+    /* Allocate memory */
+    pages = ((file->len + PAGE_SIZE - 1) / PAGE_SIZE);
+    if ((efirc = bs->AllocatePages (AllocateAnyPages,
+                                       EfiBootServicesData, pages,
+                                       &phys)) != 0)
+    {
+        die ("Could not allocate %d pages: %#lx\n",
+              pages, ((unsigned long) efirc));
+    }
+    data = ((void *) (intptr_t) phys);
 
 
-	/* Read image */
-	file->read ( file, data, 0, file->len );
-	DBG ( "Read %s\n", file->name );
+    /* Read image */
+    file->read (file, data, 0, file->len);
+    DBG ("Read %s\n", file->name);
 
-	/* Load image */
-	if ( ( efirc = bs->LoadImage ( FALSE, efi_image_handle, path, data,
-				       file->len, &handle ) ) != 0 ) {
-		die ( "Could not load %s: %#lx\n",
-		      file->name, ( ( unsigned long ) efirc ) );
-	}
-	DBG ( "Loaded %s\n", file->name );
+    /* Load image */
+    if ((efirc = bs->LoadImage (FALSE, efi_image_handle, path, data,
+                                   file->len, &handle)) != 0)
+    {
+        die ("Could not load %s: %#lx\n",
+              file->name, ((unsigned long) efirc));
+    }
+    DBG ("Loaded %s\n", file->name);
 
-	/* Get loaded image protocol */
-	if ( ( efirc = bs->OpenProtocol ( handle,
-					  &efi_loaded_image_protocol_guid,
-					  &loaded.intf, efi_image_handle, NULL,
-					  EFI_OPEN_PROTOCOL_GET_PROTOCOL ))!=0){
-		die ( "Could not get loaded image protocol for %s: %#lx\n",
-		      file->name, ( ( unsigned long ) efirc ) );
-	}
+    /* Get loaded image protocol */
+    if ((efirc = bs->OpenProtocol (handle,
+                                      &efi_loaded_image_protocol_guid,
+                                      &loaded.intf, efi_image_handle, NULL,
+                                      EFI_OPEN_PROTOCOL_GET_PROTOCOL))!=0)
+    {
+        die ("Could not get loaded image protocol for %s: %#lx\n",
+              file->name, ((unsigned long) efirc));
+    }
 
-	/* Force correct device handle */
-	if ( loaded.image->DeviceHandle != device ) {
-		DBG ( "Forcing correct DeviceHandle (%p->%p)\n",
-		      loaded.image->DeviceHandle, device );
-		loaded.image->DeviceHandle = device;
-	}
+    /* Force correct device handle */
+    if (loaded.image->DeviceHandle != device)
+    {
+        DBG ("Forcing correct DeviceHandle (%p->%p)\n",
+              loaded.image->DeviceHandle, device);
+        loaded.image->DeviceHandle = device;
+    }
 
-	/* Intercept calls to OpenProtocol() */
-	orig_open_protocol =
-		loaded.image->SystemTable->BootServices->OpenProtocol;
-	loaded.image->SystemTable->BootServices->OpenProtocol =
-		efi_open_protocol_wrapper;
+    /* Intercept calls to OpenProtocol() */
+    orig_open_protocol =
+        loaded.image->SystemTable->BootServices->OpenProtocol;
+    loaded.image->SystemTable->BootServices->OpenProtocol =
+        efi_open_protocol_wrapper;
 
-	/* Start image */
-	if ( cmdline_pause )
-		pause();
-	if ( ( efirc = bs->StartImage ( handle, NULL, NULL ) ) != 0 ) {
-		die ( "Could not start %s: %#lx\n",
-		      file->name, ( ( unsigned long ) efirc ) );
-	}
+    /* Start image */
+    if (cmdline_pause)
+        pause();
+    if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
+    {
+        die ("Could not start %s: %#lx\n",
+              file->name, ((unsigned long) efirc));
+    }
 
-	die ( "%s returned\n", file->name );
+    die ("%s returned\n", file->name);
 }

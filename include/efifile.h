@@ -34,6 +34,6 @@
 struct vdisk_file;
 
 extern struct vdisk_file *bootmgfw;
-extern void efi_extract ( EFI_HANDLE handle );
+extern void efi_extract (EFI_HANDLE handle);
 
 #endif /* _EFIFILE_H */

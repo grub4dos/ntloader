@@ -29,11 +29,14 @@
 
 #include "ntloader.h"
 
-#define assert(x) do {						\
-	if ( DEBUG && ! (x) ) {					\
-		die ( "Assertion failed at %s line %d: %s\n",	\
-		      __FILE__, __LINE__, #x );			\
-	}							\
-	} while ( 0 )
+#define assert(x) \
+do \
+{ \
+    if (DEBUG && ! (x)) \
+    { \
+        die ("Assertion failed at %s line %d: %s\n", \
+        __FILE__, __LINE__, #x); \
+    } \
+} while (0)
 
 #endif /* _ASSERT_H */

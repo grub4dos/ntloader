@@ -31,7 +31,7 @@
 #include "efi/Protocol/BlockIo.h"
 #include "efi/Protocol/DevicePath.h"
 
-extern void efi_install ( EFI_HANDLE *vdisk, EFI_HANDLE *vpartition );
+extern void efi_install (EFI_HANDLE *vdisk, EFI_HANDLE *vpartition);
 
 extern EFI_DEVICE_PATH_PROTOCOL *bootmgfw_path;
 

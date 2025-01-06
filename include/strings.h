@@ -27,6 +27,6 @@
  *
  */
 
-extern int strcasecmp ( const char *str1, const char *str2 );
+extern int strcasecmp (const char *str1, const char *str2);
 
 #endif /* _STRINGS_H */

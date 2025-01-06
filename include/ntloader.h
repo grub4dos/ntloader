@@ -40,7 +40,7 @@
 #define BASE_SEG 0x2000
 
 /** Base linear address */
-#define BASE_ADDRESS ( BASE_SEG << 4 )
+#define BASE_ADDRESS (BASE_SEG << 4)
 
 /** 64 bit long mode code segment */
 #define LM_CS 0x10
@@ -64,8 +64,8 @@
 #include <cmdline.h>
 
 /** Construct wide-character version of a string constant */
-#define L( x ) _L ( x )
-#define _L( x ) L ## x
+#define L(x) _L (x)
+#define _L(x) L ## x
 
 /** Page size */
 #define PAGE_SIZE 4096
@@ -76,8 +76,9 @@
  * @v address		Address
  * @ret page		Start page number
  */
-static inline unsigned int page_start ( const void *address ) {
-	return ( ( ( intptr_t ) address ) / PAGE_SIZE );
+static inline unsigned int page_start (const void *address)
+{
+    return (((intptr_t) address) / PAGE_SIZE);
 }
 
 /**
@@ -86,8 +87,9 @@ static inline unsigned int page_start ( const void *address ) {
  * @v address		Address
  * @ret page		End page number
  */
-static inline unsigned int page_end ( const void *address ) {
-	return ( ( ( ( intptr_t ) address ) + PAGE_SIZE - 1 ) / PAGE_SIZE );
+static inline unsigned int page_end (const void *address)
+{
+    return ((((intptr_t) address) + PAGE_SIZE - 1) / PAGE_SIZE);
 }
 
 /**
@@ -97,56 +99,67 @@ static inline unsigned int page_end ( const void *address ) {
  * @v end		End address
  * @ret num_pages	Number of pages
  */
-static inline unsigned int page_len ( const void *start, const void *end ) {
-	return ( page_end ( end ) - page_start ( start ) );
+static inline unsigned int page_len (const void *start, const void *end)
+{
+    return (page_end (end) - page_start (start));
 }
 
 /**
  * Bochs magic breakpoint
  *
  */
-static inline void bochsbp ( void ) {
-	__asm__ __volatile__ ( "xchgw %bx, %bx" );
+static inline void bochsbp (void)
+{
+    __asm__ __volatile__ ("xchgw %bx, %bx");
 }
 
 /** Debugging output */
-#define DBG(...) do {						\
-		if ( ( DEBUG & 1 ) && ( ! cmdline_quiet ) ) {	\
-			printf ( __VA_ARGS__ );			\
-		}						\
-	} while ( 0 )
+#define DBG(...) \
+do \
+{ \
+    if ((DEBUG & 1) && (! cmdline_quiet)) \
+    { \
+        printf (__VA_ARGS__); \
+    } \
+} while (0)
 
 /** Verbose debugging output */
-#define DBG2(...) do {						\
-		if ( ( DEBUG & 2 ) && ( ! cmdline_quiet ) ) {	\
-			printf ( __VA_ARGS__ );			\
-		}						\
-	} while ( 0 )
+#define DBG2(...) \
+do \
+{ \
+    if ((DEBUG & 2) && (! cmdline_quiet)) \
+    { \
+        printf (__VA_ARGS__); \
+    } \
+} while (0)
 
 /* Branch prediction macros */
-#define likely( x ) __builtin_expect ( !! (x), 1 )
-#define unlikely( x ) __builtin_expect ( (x), 0 )
+#define likely(x) __builtin_expect (!! (x), 1)
+#define unlikely(x) __builtin_expect ((x), 0)
 
 #ifdef __i386__
-extern void call_real ( struct bootapp_callback_params *params );
-extern void call_interrupt ( struct bootapp_callback_params *params );
-extern void __attribute__ (( noreturn )) reboot ( void );
+extern void call_real (struct bootapp_callback_params *params);
+extern void call_interrupt (struct bootapp_callback_params *params);
+extern void __attribute__ ((noreturn)) reboot (void);
 #else
-static inline void call_real ( struct bootapp_callback_params *params ) {
-	( void ) params;
+static inline void call_real (struct bootapp_callback_params *params)
+{
+    (void) params;
 }
-static inline void call_interrupt ( struct bootapp_callback_params *params ) {
-	( void ) params;
+static inline void call_interrupt (struct bootapp_callback_params *params)
+{
+    (void) params;
 }
-static inline void reboot ( void ) {
+static inline void reboot (void)
+{
 }
 #endif
 
-extern void __attribute__ (( noreturn, format ( printf, 1, 2 ) ))
-die ( const char *fmt, ... );
+extern void __attribute__ ((noreturn, format (printf, 1, 2)))
+die (const char *fmt, ...);
 
 extern unsigned long __stack_chk_guard;
-extern void init_cookie ( void );
+extern void init_cookie (void);
 
 #endif /* ASSEMBLY */
 

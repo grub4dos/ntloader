@@ -29,7 +29,7 @@
 
 /* EFIAPI definition */
 #if __x86_64__
-#define EFIAPI __attribute__ (( ms_abi ))
+#define EFIAPI __attribute__ ((ms_abi))
 #else
 #define EFIAPI
 #endif

@@ -34,13 +34,15 @@
  * @v path		Path to device
  * @ret path_end	End of device path
  */
-EFI_DEVICE_PATH_PROTOCOL * efi_devpath_end ( EFI_DEVICE_PATH_PROTOCOL *path ) {
+EFI_DEVICE_PATH_PROTOCOL *efi_devpath_end (EFI_DEVICE_PATH_PROTOCOL *path)
+{
 
-	while ( path->Type != END_DEVICE_PATH_TYPE ) {
-		path = ( ( ( void * ) path ) +
-			 /* There's this amazing new-fangled thing known as
-			  * a UINT16, but who wants to use one of those? */
-			 ( ( path->Length[1] << 8 ) | path->Length[0] ) );
-	}
-	return path;
+    while (path->Type != END_DEVICE_PATH_TYPE)
+    {
+        path = (((void *) path) +
+                 /* There's this amazing new-fangled thing known as
+                  * a UINT16, but who wants to use one of those? */
+                 ((path->Length[1] << 8) | path->Length[0]));
+    }
+    return path;
 }

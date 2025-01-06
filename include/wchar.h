@@ -42,14 +42,15 @@ typedef void mbstate_t;
  * This is a stub implementation, sufficient to handle basic ASCII
  * characters.
  */
-static inline size_t wcrtomb ( char *buf, wchar_t wc,
-			       mbstate_t *ps __attribute__ (( unused )) ) {
-	*buf = wc;
-	return 1;
+static inline size_t wcrtomb (char *buf, wchar_t wc,
+                               mbstate_t *ps __attribute__ ((unused)))
+{
+    *buf = wc;
+    return 1;
 }
 
-extern int wcscasecmp ( const wchar_t *str1, const wchar_t *str2 );
-extern size_t wcslen ( const wchar_t *str );
-extern wchar_t * wcschr ( const wchar_t *str, wchar_t c );
+extern int wcscasecmp (const wchar_t *str1, const wchar_t *str2);
+extern size_t wcslen (const wchar_t *str);
+extern wchar_t *wcschr (const wchar_t *str, wchar_t c);
 
 #endif /* _WCHAR_H */

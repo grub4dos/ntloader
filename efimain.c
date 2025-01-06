@@ -33,7 +33,7 @@
 #include "efiboot.h"
 
 /** SBAT section attributes */
-#define __sbat __attribute__ (( section ( ".sbat" ), aligned ( 512 ) ))
+#define __sbat __attribute__ ((section (".sbat"), aligned (512)))
 
 /** SBAT metadata */
 #define SBAT_CSV							\
@@ -51,23 +51,24 @@
 	"\n"
 
 /** SBAT metadata (with no terminating NUL) */
-const char sbat[ sizeof ( SBAT_CSV ) - 1 ] __sbat = SBAT_CSV;
+const char sbat[ sizeof (SBAT_CSV) - 1 ] __sbat = SBAT_CSV;
 
 /**
  * Process command line
  *
  * @v loaded		Loaded image protocol
  */
-static void efi_cmdline ( EFI_LOADED_IMAGE_PROTOCOL *loaded ) {
-	size_t cmdline_len = ( loaded->LoadOptionsSize / sizeof ( wchar_t ) );
-	char cmdline[ cmdline_len + 1 /* NUL */ ];
-	const wchar_t *wcmdline = loaded->LoadOptions;
+static void efi_cmdline (EFI_LOADED_IMAGE_PROTOCOL *loaded)
+{
+    size_t cmdline_len = (loaded->LoadOptionsSize / sizeof (wchar_t));
+    char cmdline[ cmdline_len + 1 /* NUL */ ];
+    const wchar_t *wcmdline = loaded->LoadOptions;
 
-	/* Convert command line to ASCII */
-	snprintf ( cmdline, sizeof ( cmdline ), "%ls", wcmdline );
+    /* Convert command line to ASCII */
+    snprintf (cmdline, sizeof (cmdline), "%ls", wcmdline);
 
-	/* Process command line */
-	process_cmdline ( cmdline );
+    /* Process command line */
+    process_cmdline (cmdline);
 }
 
 /**
@@ -77,49 +78,52 @@ static void efi_cmdline ( EFI_LOADED_IMAGE_PROTOCOL *loaded ) {
  * @v systab		EFI system table
  * @ret efirc		EFI status code
  */
-EFI_STATUS EFIAPI efi_main ( EFI_HANDLE image_handle,
-			     EFI_SYSTEM_TABLE *systab ) {
-	EFI_BOOT_SERVICES *bs;
-	union {
-		EFI_LOADED_IMAGE_PROTOCOL *image;
-		void *interface;
-	} loaded;
-	EFI_HANDLE vdisk = NULL;
-	EFI_HANDLE vpartition = NULL;
-	EFI_STATUS efirc;
+EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,
+                             EFI_SYSTEM_TABLE *systab)
+{
+    EFI_BOOT_SERVICES *bs;
+    union
+    {
+        EFI_LOADED_IMAGE_PROTOCOL *image;
+        void *interface;
+    } loaded;
+    EFI_HANDLE vdisk = NULL;
+    EFI_HANDLE vpartition = NULL;
+    EFI_STATUS efirc;
 
-	/* Record EFI handle and system table */
-	efi_image_handle = image_handle;
-	efi_systab = systab;
-	bs = systab->BootServices;
+    /* Record EFI handle and system table */
+    efi_image_handle = image_handle;
+    efi_systab = systab;
+    bs = systab->BootServices;
 
-	/* Initialise stack cookie */
-	init_cookie();
+    /* Initialise stack cookie */
+    init_cookie();
 
-	/* Print welcome banner */
-	printf ( "\n\nntloader " VERSION " -- Windows NT6+ OS/VHD/WIM "
-		 "loader -- https://github.com/grub4dos/ntloader\n\n" );
+    /* Print welcome banner */
+    printf ("\n\nntloader " VERSION " -- Windows NT6+ OS/VHD/WIM "
+             "loader -- https://github.com/grub4dos/ntloader\n\n");
 
-	/* Get loaded image protocol */
-	if ( ( efirc = bs->OpenProtocol ( image_handle,
-					  &efi_loaded_image_protocol_guid,
-					  &loaded.interface, image_handle, NULL,
-					  EFI_OPEN_PROTOCOL_GET_PROTOCOL ))!=0){
-		die ( "Could not open loaded image protocol: %#lx\n",
-		      ( ( unsigned long ) efirc ) );
-	}
+    /* Get loaded image protocol */
+    if ((efirc = bs->OpenProtocol (image_handle,
+                                      &efi_loaded_image_protocol_guid,
+                                      &loaded.interface, image_handle, NULL,
+                                      EFI_OPEN_PROTOCOL_GET_PROTOCOL))!=0)
+    {
+        die ("Could not open loaded image protocol: %#lx\n",
+              ((unsigned long) efirc));
+    }
 
-	/* Process command line */
-	efi_cmdline ( loaded.image );
+    /* Process command line */
+    efi_cmdline (loaded.image);
 
-	/* Extract files from file system */
-	efi_extract ( loaded.image->DeviceHandle );
+    /* Extract files from file system */
+    efi_extract (loaded.image->DeviceHandle);
 
-	/* Install virtual disk */
-	efi_install ( &vdisk, &vpartition );
+    /* Install virtual disk */
+    efi_install (&vdisk, &vpartition);
 
-	/* Invoke boot manager */
-	efi_boot ( bootmgfw, bootmgfw_path, vpartition );
+    /* Invoke boot manager */
+    efi_boot (bootmgfw, bootmgfw_path, vpartition);
 
-	return 0;
+    return 0;
 }

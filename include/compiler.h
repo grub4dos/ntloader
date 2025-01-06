@@ -43,6 +43,6 @@
 #define FILE_LICENCE(x)
 
 /* Mark parameter as unused */
-#define __unused __attribute__ (( unused ))
+#define __unused __attribute__ ((unused))
 
 #endif /* _COMPILER_H */

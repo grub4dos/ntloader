@@ -33,14 +33,15 @@
  * Pause before booting
  *
  */
-void pause ( void ) {
-
-	/* Wait for keypress, prompting unless inhibited */
-	if ( cmdline_pause_quiet ) {
-		getchar();
-	} else {
-		printf ( "Press any key to continue booting..." );
-		getchar();
-		printf ( "\n" );
-	}
+void pause (void)
+{
+    /* Wait for keypress, prompting unless inhibited */
+    if (cmdline_pause_quiet)
+        getchar();
+    else
+    {
+        printf ("Press any key to continue booting...");
+        getchar();
+        printf ("\n");
+    }
 }

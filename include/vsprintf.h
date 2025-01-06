@@ -31,7 +31,7 @@
  *
  */
 
-FILE_LICENCE ( GPL2_OR_LATER );
+FILE_LICENCE (GPL2_OR_LATER);
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -44,31 +44,32 @@ FILE_LICENCE ( GPL2_OR_LATER );
  * vprintf() and vsnprintf(), without requiring the allocation of a
  * buffer for vprintf().
  */
-struct printf_context {
-	/**
-	 * Character handler
-	 *
-	 * @v ctx	Context
-	 * @v c		Character
-	 *
-	 * This method is called for each character written to the
-	 * formatted string.
-	 */
-	void ( * handler ) ( struct printf_context *ctx, unsigned int c );
-	/** Length of formatted string
-	 *
-	 * When handler() is called, @len will be set to the number of
-	 * characters written so far (i.e. zero for the first call to
-	 * handler()).
-	 */
-	size_t len;
+struct printf_context
+{
+    /**
+     * Character handler
+     *
+     * @v ctx	Context
+     * @v c		Character
+     *
+     * This method is called for each character written to the
+     * formatted string.
+     */
+    void (* handler) (struct printf_context *ctx, unsigned int c);
+    /** Length of formatted string
+     *
+     * When handler() is called, @len will be set to the number of
+     * characters written so far (i.e. zero for the first call to
+     * handler()).
+     */
+    size_t len;
 };
 
-extern size_t vcprintf ( struct printf_context *ctx, const char *fmt,
-			 va_list args );
-extern int vssnprintf ( char *buf, ssize_t ssize, const char *fmt,
-			va_list args );
-extern int __attribute__ (( format ( printf, 3, 4 ) ))
-ssnprintf ( char *buf, ssize_t ssize, const char *fmt, ... );
+extern size_t vcprintf (struct printf_context *ctx, const char *fmt,
+                         va_list args);
+extern int vssnprintf (char *buf, ssize_t ssize, const char *fmt,
+                        va_list args);
+extern int __attribute__ ((format (printf, 3, 4)))
+ssnprintf (char *buf, ssize_t ssize, const char *fmt, ...);
 
 #endif /* _IPXE_VSPRINTF_H */

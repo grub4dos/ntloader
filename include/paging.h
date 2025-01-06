@@ -60,20 +60,21 @@
 #define ADDR_4GB 0x100000000ULL
 
 /** Saved paging state */
-struct paging_state {
-	/** Control register 0 */
-	unsigned long cr0;
-	/** Control register 3 */
-	unsigned long cr3;
-	/** Control register 4 */
-	unsigned long cr4;
+struct paging_state
+{
+    /** Control register 0 */
+    unsigned long cr0;
+    /** Control register 3 */
+    unsigned long cr3;
+    /** Control register 4 */
+    unsigned long cr4;
 };
 
 extern int paging;
 
-extern void init_paging ( void );
-extern void enable_paging ( struct paging_state *state );
-extern void disable_paging ( struct paging_state *state );
-extern uint64_t relocate_memory_high ( void *start, size_t len );
+extern void init_paging (void);
+extern void enable_paging (struct paging_state *state);
+extern void disable_paging (struct paging_state *state);
+extern uint64_t relocate_memory_high (void *start, size_t len);
 
 #endif /* _PAGING_H */
