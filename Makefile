@@ -11,6 +11,7 @@ OBJECTS += int13.o vdisk.o cpio.o stdio.o die.o efi.o efimain.o
 OBJECTS += efiguid.o efifile.o efipath.o efiboot.o efiblock.o cmdline.o
 OBJECTS += pause.o cookie.o
 OBJECTS += paging.o memmap.o
+OBJECTS += reg.o
 
 # Target-dependent objects
 #
