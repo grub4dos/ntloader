@@ -34,6 +34,7 @@
 #include "ntloader.h"
 #include "cmdline.h"
 #include "bcd.h"
+#include "charset.h"
 
 static struct nt_args args =
 {
@@ -276,6 +277,8 @@ void process_cmdline (char *cmdline)
             {
                 snprintf (args.initrd_path, MAX_PATH + 1, "%s", value);
                 convert_path (args.initrd_path, 1);
+                utf8_to_ucs2 (args.initrd_pathw, MAX_PATH + 1,
+                              (uint8_t *) args.initrd_path);
             }
         }
         else
