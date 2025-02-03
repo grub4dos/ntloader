@@ -29,12 +29,12 @@
 #include "ntloader.h"
 #include "cmdline.h"
 #include "vdisk.h"
-#include "pause.h"
 #include "efi.h"
 #include "efi/Protocol/GraphicsOutput.h"
 #include "efipath.h"
 #include "efiboot.h"
 
+#if 0
 /** Original OpenProtocol() method */
 static EFI_OPEN_PROTOCOL orig_open_protocol;
 
@@ -86,8 +86,7 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
                &handle,
                &efi_graphics_output_protocol_blocked_guid,
                &efi_graphics_output_protocol_blocked,
-               NULL) == 0) &&
-         (! cmdline_gui))
+               NULL) == 0))
     {
         DBG ("Forcing text mode output\n");
         return EFI_INVALID_PARAMETER;
@@ -95,6 +94,7 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
 
     return 0;
 }
+#endif
 
 /**
  * Boot from EFI device
@@ -161,15 +161,15 @@ void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
         loaded.image->DeviceHandle = device;
     }
 
+#if 0
     /* Intercept calls to OpenProtocol() */
     orig_open_protocol =
         loaded.image->SystemTable->BootServices->OpenProtocol;
     loaded.image->SystemTable->BootServices->OpenProtocol =
         efi_open_protocol_wrapper;
+#endif
 
     /* Start image */
-    if (cmdline_pause)
-        pause();
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
     {
         die ("Could not start %s: %#lx\n",

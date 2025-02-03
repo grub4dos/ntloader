@@ -36,7 +36,6 @@
 #include "vdisk.h"
 #include "cpio.h"
 #include "cmdline.h"
-#include "pause.h"
 #include "paging.h"
 #include "memmap.h"
 
@@ -84,7 +83,6 @@ enum
 static void call_interrupt_wrapper (struct bootapp_callback_params *params)
 {
     struct paging_state state;
-    uint16_t *attributes;
 
     /* Handle/modify/pass-through interrupt as required */
     if (params->vector.interrupt == 0x13)
@@ -100,17 +98,18 @@ static void call_interrupt_wrapper (struct bootapp_callback_params *params)
         disable_paging (&state);
 
     }
+#if 0
     else if ((params->vector.interrupt == 0x10) &&
-              (params->ax == 0x4f01) &&
-              (! cmdline_gui))
+              (params->ax == 0x4f01))
     {
 
         /* Mark all VESA video modes as unsupported */
-        attributes = REAL_PTR (params->es, params->di);
+        uint16_t *attributes = REAL_PTR (params->es, params->di);
         call_interrupt (params);
         *attributes &= ~0x0001;
 
     }
+#endif
     else
     {
 
@@ -341,8 +340,6 @@ int main (void)
 
     /* Jump to PE image */
     DBG ("Entering bootmgr.exe with parameters at %p\n", &bootapps);
-    if (cmdline_pause)
-        pause();
     pe.entry (&bootapps.bootapp);
     die ("FATAL: bootmgr.exe returned\n");
 }

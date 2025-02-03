@@ -28,33 +28,75 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <ctype.h>
+#include <wchar.h>
 #include "ntloader.h"
 #include "cmdline.h"
+#include "bcd.h"
 
-/** Use raw (unpatched) BCD files */
-int cmdline_rawbcd;
+static struct nt_args args =
+{
+    .testmode = NTARG_BOOL_FALSE,
+    .hires = NTARG_BOOL_UNSET, // wim = yes
+    .hal = NTARG_BOOL_TRUE,
+    .minint = NTARG_BOOL_UNSET, // wim = yes
+    .novga = NTARG_BOOL_FALSE,
+    .novesa = NTARG_BOOL_FALSE,
+    .safemode = NTARG_BOOL_FALSE,
+    .altshell = NTARG_BOOL_FALSE,
 
-/** Use raw (unpatched) WIM files */
-int cmdline_rawwim;
+    .nx = NX_OPTIN,
+    .pae = PAE_DEFAULT,
+    .timeout = 0,
+    .safeboot = SAFE_MINIMAL,
 
-/** Inhibit debugging output */
-int cmdline_quiet;
+    .loadopt = BCD_DEFAULT_CMDLINE,
+    .winload = "",
+    .sysroot = BCD_DEFAULT_SYSROOT,
 
-/** Allow graphical output from bootmgr/bootmgfw */
-int cmdline_gui;
+    .boottype = NTBOOT_WOS,
+    .fsuuid = "",
+    .partid = { 0 },
+    .diskid = { 0 },
+    .partmap = 0x01,
 
-/** Pause before booting OS */
-int cmdline_pause;
+    .initrd_path = "\\initrd.cpio",
+    .initrd_pathw = L"\\initrd.cpio",
+    .bcd = NULL,
+    .bcd_length = 0,
+};
 
-/** Pause without displaying any prompt */
-int cmdline_pause_quiet;
+struct nt_args *nt_cmdline;
 
-/** Use linear (unpaged) memory model */
-int cmdline_linear;
+static void
+convert_path (char *str, int backslash)
+{
+    char *p = str;
+    while (*p)
+    {
+        if (*p == '/' && backslash)
+            *p = '\\';
+        if (*p == ':')
+            *p = ' ';
+        if (*p == '\r' || *p == '\n')
+            *p = '\0';
+        p++;
+    }
+}
 
-/** WIM boot index */
-unsigned int cmdline_index;
+static uint8_t
+convert_bool (const char *str)
+{
+    uint8_t value = NTARG_BOOL_FALSE;
+    if (! str ||
+        strcasecmp (str, "yes") == 0 ||
+        strcasecmp (str, "on") == 0 ||
+        strcasecmp (str, "true") == 0 ||
+        strcasecmp (str, "1") == 0)
+        value = NTARG_BOOL_TRUE;
+    return value;
+}
 
 /**
  * Process command line
@@ -66,12 +108,16 @@ void process_cmdline (char *cmdline)
     char *tmp = cmdline;
     char *key;
     char *value;
-    char *endp;
     char chr;
+
+    nt_cmdline = &args;
 
     /* Do nothing if we have no command line */
     if ((cmdline == NULL) || (cmdline[0] == '\0'))
         return;
+
+    /* Show command line */
+    printf ("Command line: \"%s\"\n", cmdline);
 
     /* Parse command line */
     while (*tmp)
@@ -101,44 +147,140 @@ void process_cmdline (char *cmdline)
         }
 
         /* Process this argument */
-        if (strcmp (key, "rawbcd") == 0)
-            cmdline_rawbcd = 1;
-        else if (strcmp (key, "rawwim") == 0)
-            cmdline_rawwim = 1;
-        else if (strcmp (key, "gui") == 0)
-            cmdline_gui = 1;
-        else if (strcmp (key, "linear") == 0)
-            cmdline_linear = 1;
-        else if (strcmp (key, "quiet") == 0)
-            cmdline_quiet = 1;
-        else if (strcmp (key, "pause") == 0)
+        if (strcmp (key, "uuid") == 0)
         {
-            cmdline_pause = 1;
-            if (value && (strcmp (value, "quiet") == 0))
-                cmdline_pause_quiet = 1;
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "uuid");
+            snprintf (args.fsuuid, 17, "%s", value);
         }
-        else if (strcmp (key, "index") == 0)
+        else if (strcmp (key, "wim") == 0)
         {
-            if ((! value) || (! value[0]))
-                die ("Argument \"index\" needs a value\n");
-            cmdline_index = strtoul (value, &endp, 0);
-            if (*endp)
-                die ("Invalid index \"%s\"\n", value);
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "wim");
+            snprintf (args.filepath, 256, "%s", value);
+            convert_path (args.filepath, 1);
+            args.boottype = NTBOOT_WIM;
         }
-        else if (strcmp (key, "initrdfile") == 0)
+        else if (strcmp (key, "vhd") == 0)
         {
-            /* Ignore this keyword to allow for use with syslinux */
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "vhd");
+            snprintf (args.filepath, 256, "%s", value);
+            convert_path (args.filepath, 1);
+            args.boottype = NTBOOT_VHD;
         }
-        else if (key == cmdline)
+        else if (strcmp (key, "file") == 0)
         {
-            /* Ignore unknown initial arguments, which may
-             * be the program name.
-             */
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "file");
+            snprintf (args.filepath, 256, "%s", value);
+            convert_path (args.filepath, 1);
+            char *ext = strrchr (value, '.');
+            if (ext && strcasecmp(ext, ".wim") == 0)
+                args.boottype = NTBOOT_WIM;
+            else
+                args.boottype = NTBOOT_VHD;
+        }
+        else if (strcmp (key, "testmode") == 0)
+        {
+            args.testmode = convert_bool (value);
+        }
+        else if (strcmp (key, "hires") == 0)
+        {
+            args.hires = convert_bool (value);
+        }
+        else if (strcmp (key, "detecthal") == 0)
+        {
+            args.hal = convert_bool (value);
+        }
+        else if (strcmp (key, "minint") == 0)
+        {
+            args.minint = convert_bool (value);
+        }
+        else if (strcmp (key, "novga") == 0)
+        {
+            args.novga = convert_bool (value);
+        }
+        else if (strcmp (key, "novesa") == 0)
+        {
+            args.novesa = convert_bool (value);
+        }
+        else if (strcmp (key, "altshell") == 0)
+        {
+            args.altshell = convert_bool (value);
+            args.safemode = NTARG_BOOL_TRUE;
+        }
+        else if (strcmp (key, "nx") == 0)
+        {
+            if (! value || strcasecmp (value, "OptIn") == 0)
+                args.nx = NX_OPTIN;
+            else if (strcasecmp (value, "OptOut") == 0)
+                args.nx = NX_OPTOUT;
+            else if (strcasecmp (value, "AlwaysOff") == 0)
+                args.nx = NX_ALWAYSOFF;
+            else if (strcasecmp (value, "AlwaysOn") == 0)
+                args.nx = NX_ALWAYSON;
+        }
+        else if (strcmp (key, "pae") == 0)
+        {
+            if (! value || strcasecmp (value, "Default") == 0)
+                args.pae = PAE_DEFAULT;
+            else if (strcasecmp (value, "Enable") == 0)
+                args.pae = PAE_ENABLE;
+            else if (strcasecmp (value, "Disable") == 0)
+                args.pae = PAE_DISABLE;
+        }
+        else if (strcmp (key, "safemode") == 0)
+        {
+            args.safemode = NTARG_BOOL_TRUE;
+            if (! value || strcasecmp (value, "Minimal") == 0)
+                args.safeboot = SAFE_MINIMAL;
+            else if (strcasecmp (value, "Network") == 0)
+                args.safeboot = SAFE_NETWORK;
+            else if (strcasecmp (value, "DsRepair") == 0)
+                args.safeboot = SAFE_DSREPAIR;
+        }
+        else if (strcmp (key, "loadopt") == 0)
+        {
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "loadopt");
+            snprintf (args.loadopt, 128, "%s", value);
+            convert_path (args.loadopt, 0);
+        }
+        else if (strcmp (key, "winload") == 0)
+        {
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "winload");
+            else
+            {
+                snprintf (args.winload, 64, "%s", value);
+                convert_path (args.winload, 1);
+            }
+        }
+        else if (strcmp (key, "sysroot") == 0)
+        {
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "sysroot");
+            else
+            {
+                snprintf (args.sysroot, 32, "%s", value);
+                convert_path (args.sysroot, 1);
+            }
+        }
+        else if (strcmp (key, "initrdfile") == 0 ||
+            strcmp (key, "initrd") == 0)
+        {
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "initrd");
+            else
+            {
+                snprintf (args.initrd_path, MAX_PATH + 1, "%s", value);
+                convert_path (args.initrd_path, 1);
+            }
         }
         else
         {
-            die ("Unrecognised argument \"%s%s%s\"\n", key,
-                  (value ? "=" : ""), (value ? value : ""));
+            /* Ignore unknown arguments */
         }
 
         /* Undo modifications to command line */
@@ -148,6 +290,19 @@ void process_cmdline (char *cmdline)
             value[-1] = '=';
     }
 
-    /* Show command line (after parsing "quiet" option) */
-    DBG ("Command line: \"%s\"\n", cmdline);
+    if (args.hires == NTARG_BOOL_UNSET)
+    {
+        if (args.boottype == NTBOOT_WIM)
+            args.hires = NTARG_BOOL_TRUE;
+        else
+            args.hires = NTARG_BOOL_FALSE;
+    }
+
+    if (args.minint == NTARG_BOOL_UNSET)
+    {
+        if (args.boottype == NTBOOT_WIM)
+            args.minint = NTARG_BOOL_TRUE;
+        else
+            args.minint = NTARG_BOOL_FALSE;
+    }
 }

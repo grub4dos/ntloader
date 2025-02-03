@@ -316,6 +316,45 @@ size_t wcslen (const wchar_t *str)
 }
 
 /**
+ * Find character in string
+ *
+ * @v str		String
+ * @v c			Character
+ * @ret first		First occurrence of character in string, or NULL
+ */
+char *
+strchr (const char *str, int c)
+{
+    do
+    {
+        if (*str == c)
+            return ((char *) str);
+    }
+    while (*str++);
+    return NULL;
+}
+
+/**
+ * Find character in string reversely
+ *
+ * @v str		String
+ * @v c			Character
+ * @ret last		Last occurrence of character in string, or NULL
+ */
+char *
+strrchr (const char *str, int c)
+{
+    char *p = NULL;
+    do
+    {
+        if (*str == c)
+            p = (char *) str;
+    }
+    while (*str++);
+    return p;
+}
+
+/**
  * Find character in wide-character string
  *
  * @v str		String
@@ -324,12 +363,12 @@ size_t wcslen (const wchar_t *str)
  */
 wchar_t *wcschr (const wchar_t *str, wchar_t c)
 {
-
-    for (; *str ; str++)
+    do
     {
         if (*str == c)
             return ((wchar_t *)str);
     }
+    while (*str++);
     return NULL;
 }
 

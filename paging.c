@@ -98,13 +98,6 @@ void init_paging (void)
     uint32_t addr;
     unsigned int i;
 
-    /* Do nothing if paging is disabled */
-    if (cmdline_linear)
-    {
-        DBG ("Paging disabled\n");
-        return;
-    }
-
     /* Check for PAE */
     if (! paging_supported())
     {

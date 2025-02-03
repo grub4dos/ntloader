@@ -124,10 +124,6 @@ static void efi_patch_bcd (struct vdisk_file *vfile __unused, void *data,
     static const wchar_t replace[] = L".efi";
     size_t i;
 
-    /* Do nothing if BCD patching is disabled */
-    if (cmdline_rawbcd)
-        return;
-
     /* Patch any occurrences of ".exe" to ".efi".  In the common
      * simple cases, this allows the same BCD file to be used for
      * both BIOS and UEFI systems.

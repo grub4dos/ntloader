@@ -35,5 +35,7 @@ extern void *memset (void *dest, int c, size_t len);
 extern int memcmp (const void *src1, const void *src2, size_t len);
 extern int strcmp (const char *str1, const char *str2);
 extern size_t strlen (const char *str);
+extern char *strchr (const char *str, int c);
+char *strrchr (const char *str, int c);
 
 #endif /* _STRING_H */
