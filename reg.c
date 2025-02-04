@@ -109,15 +109,15 @@ static enum reg_bool check_header(hive_t *h)
     return true;
 }
 
-void find_root(hive_t *h, HKEY *Key)
+void reg_find_root(hive_t *h, HKEY *Key)
 {
     HBASE_BLOCK *base_block = (HBASE_BLOCK *)h->data;
     *Key = 0x1000 + base_block->RootCell;
 }
 
 reg_err_t
-enum_keys(hive_t *h, HKEY Key, uint32_t Index,
-          wchar_t *Name, uint32_t NameLength)
+reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
+              wchar_t *Name, uint32_t NameLength)
 {
     int32_t size;
     enum reg_bool overflow = false;
@@ -398,7 +398,7 @@ find_child_key(hive_t *h, HKEY parent,
 }
 
 reg_err_t
-find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key)
+reg_find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key)
 {
     reg_err_t Status;
     size_t nblen;
@@ -426,8 +426,9 @@ find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key)
 }
 
 reg_err_t
-enum_values(hive_t *h, HKEY Key,
-            uint32_t Index, wchar_t *Name, uint32_t NameLength, uint32_t *Type)
+reg_enum_values(hive_t *h, HKEY Key,
+                uint32_t Index, wchar_t *Name,
+                uint32_t NameLength, uint32_t *Type)
 {
     int32_t size;
     CM_KEY_NODE *nk;
@@ -531,9 +532,9 @@ enum_values(hive_t *h, HKEY Key,
 }
 
 reg_err_t
-query_value(hive_t *h, HKEY Key,
-            const wchar_t *Name, void **Data,
-            uint32_t *DataLength, uint32_t *Type)
+reg_query_value(hive_t *h, HKEY Key,
+                const wchar_t *Name, void **Data,
+                uint32_t *DataLength, uint32_t *Type)
 {
     int32_t size;
     CM_KEY_NODE *nk;
@@ -778,7 +779,7 @@ static enum reg_bool validate_bins(const uint8_t *data, size_t len)
     return true;
 }
 
-reg_err_t open_hive(hive_t *h)
+reg_err_t reg_open_hive(hive_t *h)
 {
     if (!check_header(h))
     {
