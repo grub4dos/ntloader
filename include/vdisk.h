@@ -159,7 +159,7 @@ struct vdisk_mbr
 #define VDISK_MBR_TYPE_FAT32 0x0c
 
 /** MBR signature */
-#define VDISK_MBR_SIGNATURE 0xc0ffeeee
+#define VDISK_MBR_SIGNATURE 0x14530529
 
 /** MBR magic */
 #define VDISK_MBR_MAGIC 0xaa55
@@ -261,10 +261,10 @@ struct vdisk_vbr
 #define VDISK_VBR_SIGNATURE 0x29
 
 /** VBR serial number */
-#define VDISK_VBR_SERIAL 0xf00df00d
+#define VDISK_VBR_SERIAL 0xdeadc0de
 
 /** VBR label */
-#define VDISK_VBR_LABEL "wimboot    "
+#define VDISK_VBR_LABEL "ntloader  "
 
 /** VBR system identifier */
 #define VDISK_VBR_SYSTEM "FAT32   "
