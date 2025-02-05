@@ -34,8 +34,8 @@
 #define NTBOOT_WIM 0x00
 #define NTBOOT_VHD 0x01
 #define NTBOOT_WOS 0x02
-#if 0
 #define NTBOOT_REC 0x03
+#if 0
 #define NTBOOT_APP 0x04
 #define NTBOOT_MEM 0x05
 #define NTBOOT_RAM 0x06

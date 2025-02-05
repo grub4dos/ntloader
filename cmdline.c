@@ -308,4 +308,11 @@ void process_cmdline (char *cmdline)
         else
             args.minint = NTARG_BOOL_FALSE;
     }
+    if (args.winload[0] == '\0')
+    {
+        if (args.boottype == NTBOOT_WIM)
+            snprintf (args.winload, 64, "%s", BCD_LONG_WINLOAD);
+        else
+            snprintf (args.winload, 64, "%s", BCD_SHORT_WINLOAD);
+    }
 }

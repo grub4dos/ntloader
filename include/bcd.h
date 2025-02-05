@@ -39,6 +39,10 @@
 #define GUID_RELDRST L"{1afa9c49-16ab-4a5c-901b-212802da9460}"
 #define GUID_BTLDRST L"{6efb52bf-1766-41db-a6b3-0ee5eff72bd7}"
 
+#define GUID_BIN_RAMDISK \
+  { 0xe0, 0x34, 0x55, 0xae, 0x24, 0xa9, 0x6c, 0x46, \
+    0xb8, 0x36, 0x75, 0x85, 0x39, 0xa3, 0xee, 0x3a }
+
 #define BCD_REG_ROOT L"Objects"
 #define BCD_REG_HKEY L"Elements"
 #define BCD_REG_HVAL L"Element"
