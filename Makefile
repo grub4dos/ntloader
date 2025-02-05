@@ -10,7 +10,7 @@ OBJECTS := prefix.o startup.o callback.o main.o vsprintf.o string.o peloader.o
 OBJECTS += int13.o vdisk.o cpio.o stdio.o die.o efi.o efimain.o
 OBJECTS += efiguid.o efifile.o efipath.o efiboot.o efiblock.o cmdline.o
 OBJECTS += cookie.o paging.o memmap.o
-OBJECTS += reg.o charset.o bcd.o
+OBJECTS += reg.o charset.o bcd.o fsuuid.o
 
 # Target-dependent objects
 #
@@ -38,6 +38,7 @@ OBJCOPY		?= objcopy
 # Build tools for host binaries
 #
 HOST_CC		:= $(CC)
+HOST_MINGW_CC	?= i686-w64-mingw32-gcc
 
 # Get list of default compiler definitions
 #
@@ -272,11 +273,22 @@ elf2efi64 : utils/elf2efi.c Makefile
 
 ###############################################################################
 #
+# fsuuid
+
+fsuuid.exe : utils/fsuuid.c
+	$(HOST_MINGW_CC) $(HOST_CFLAGS) -idirafter include/ $< -o $@
+
+fsuuid : utils/fsuuid.c
+	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ $< -o $@
+
+###############################################################################
+#
 # Cleanup
 
 clean :
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f elf2efi32 elf2efi64
+	$(RM) -f fsuuid fsuuid.exe
 	$(RM) -f ntloader.i386 ntloader.i386.*
 	$(RM) -f ntloader.x86_64 ntloader.x86_64.*
 	$(RM) -f ntloader.arm64 ntloader.arm64.*
