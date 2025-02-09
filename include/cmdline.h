@@ -71,7 +71,7 @@ struct nt_args
     char fsuuid[17];
     uint8_t partid[16];
     uint8_t diskid[16];
-    uint32_t partmap;
+    uint8_t partmap;
     char filepath[MAX_PATH + 1];
 
     char initrd_path[MAX_PATH + 1];

@@ -192,7 +192,7 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
     data[ofs + 0x08] = 0x48;
     memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
-    memcpy (data + ofs + 0x24, &nt_cmdline->partmap, sizeof (uint32_t));
+    data[ofs + 0x24] = nt_cmdline->partmap;
     memcpy (data + ofs + 0x28, nt_cmdline->diskid, 16);
     if (boottype == NTBOOT_WIM || boottype == NTBOOT_VHD)
         utf8_to_ucs2 ((uint16_t *)(data + ofs + 0x48), MAX_PATH,
