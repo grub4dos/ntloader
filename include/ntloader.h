@@ -69,6 +69,10 @@
 /** Page size */
 #define PAGE_SIZE 4096
 
+/** Calculating log base 2 of 64-bit integers */
+#define SECTOR_LOG2ULL(n, s) \
+    for (n = 0; (1U << n) < s; n++);
+
 /**
  * Calculate start page number
  *
