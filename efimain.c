@@ -31,6 +31,8 @@
 #include "efifile.h"
 #include "efiblock.h"
 #include "efiboot.h"
+#include "efidisk.h"
+#include "bcd.h"
 
 /** SBAT section attributes */
 #define __sbat __attribute__ ((section (".sbat"), aligned (512)))
@@ -115,9 +117,18 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,
 
     /* Process command line */
     efi_cmdline (loaded.image);
+    getchar();
+
+    efidisk_init ();
+    efidisk_iterate ();
+    getchar();
 
     /* Extract files from file system */
     efi_extract (loaded.image->DeviceHandle);
+    getchar();
+
+    bcd_patch_data ();
+    getchar();
 
     /* Install virtual disk */
     efi_install (&vdisk, &vpartition);

@@ -110,36 +110,6 @@ static void efi_read_file (struct vdisk_file *vfile, void *data,
 }
 
 /**
- * Patch BCD file
- *
- * @v vfile		Virtual file
- * @v data		Data buffer
- * @v offset		Offset
- * @v len		Length
- */
-static void efi_patch_bcd (struct vdisk_file *vfile __unused, void *data,
-                            size_t offset, size_t len)
-{
-    static const wchar_t search[] = L".exe";
-    static const wchar_t replace[] = L".efi";
-    size_t i;
-
-    /* Patch any occurrences of ".exe" to ".efi".  In the common
-     * simple cases, this allows the same BCD file to be used for
-     * both BIOS and UEFI systems.
-     */
-    for (i = 0 ; (i + sizeof (search)) < len ; i++)
-    {
-        if (wcscasecmp ((data + i), search) == 0)
-        {
-            memcpy ((data + i), replace, sizeof (replace));
-            DBG ("...patched BCD at %#zx: \"%ls\" to \"%ls\"\n",
-                  (offset + i), search, replace);
-        }
-    }
-}
-
-/**
  * File handler
  *
  * @v name		File name
@@ -166,7 +136,8 @@ static int efi_add_file (const char *name, void *data, size_t len)
     else if (strcasecmp (name, "BCD") == 0)
     {
         DBG ("...found BCD\n");
-        vdisk_patch_file (vfile, efi_patch_bcd);
+        nt_cmdline->bcd_length = len;
+        nt_cmdline->bcd = data;
     }
 
     return 0;
