@@ -38,6 +38,8 @@
 #include "cmdline.h"
 #include "paging.h"
 #include "memmap.h"
+#include "biosdisk.h"
+#include "bcd.h"
 
 /** Start of our image (defined by linker) */
 extern char _start[];
@@ -223,6 +225,12 @@ static int add_file (const char *name, void *data, size_t len)
         DBG ("...found bootmgr.exe\n");
         bootmgr = file;
     }
+    else if (strcasecmp (name, "BCD") == 0)
+    {
+        DBG ("...found BCD\n");
+        nt_cmdline->bcd_length = len;
+        nt_cmdline->bcd = data;
+    }
 
     return 0;
 }
@@ -285,6 +293,11 @@ int main (void)
 
     /* Process command line */
     process_cmdline (cmdline);
+    getchar();
+
+    biosdisk_init ();
+    biosdisk_iterate ();
+    getchar();
 
     /* Initialise paging */
     init_paging();
@@ -300,6 +313,10 @@ int main (void)
     /* Extract files from initrd */
     if (cpio_extract (initrd, initrd_len, add_file) != 0)
         die ("FATAL: could not extract initrd files\n");
+    getchar();
+
+    bcd_patch_data ();
+    getchar();
 
     /* Add INT 13 drive */
     callback.drive = initialise_int13();

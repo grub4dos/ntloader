@@ -80,7 +80,7 @@ bcd_patch_bool (hive_t *hive, HKEY objects,
     uint32_t len;
     data = bcd_find_hive (hive, objects, guid, keyname, &len);
     if (len != sizeof (uint8_t))
-        die ("Invalid bool size %u\n", len);
+        die ("Invalid bool size %x\n", len);
     memcpy (data, &val, sizeof (uint8_t));
     DBG ("...patched %ls->%ls (%c)\n", guid, keyname, val ? 'y' : 'n');
 }
@@ -94,7 +94,7 @@ bcd_patch_u64 (hive_t *hive, HKEY objects,
     uint32_t len;
     data = bcd_find_hive (hive, objects, guid, keyname, &len);
     if (len != sizeof (uint64_t))
-        die ("Invalid u64 size %u\n", len);
+        die ("Invalid u64 size %x\n", len);
     memcpy (data, &val, sizeof (uint64_t));
     DBG ("...patched %ls->%ls (%llx)\n", guid, keyname, val);
 }
@@ -143,7 +143,7 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
         case NTBOOT_WIM:
         {
             if (len < 0x028a)
-                die ("WIM device path (%ls->%ls) length error (%u)\n",
+                die ("WIM device path (%ls->%ls) length error (%x)\n",
                     guid, keyname, len);
             memcpy (data + 0x0000, sdi, sizeof (sdi)); // sdi guid
             data[0x0014] = 0x01;
@@ -158,7 +158,7 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
         case NTBOOT_VHD:
         {
             if (len < 0x02bc)
-                die ("VHD device path (%ls->%ls) length error (%u)\n",
+                die ("VHD device path (%ls->%ls) length error (%x)\n",
                      guid, keyname, len);
             data[0x0010] = 0x08;
             data[0x0018] = 0xac; data[0x0019] = 0x02; // len - 0x10
@@ -179,20 +179,17 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
         case NTBOOT_REC:
         {
             if (len < 0x0058)
-                die ("OS device path (%ls->%ls) length error (%u)\n",
+                die ("OS device path (%ls->%ls) length error (%x)\n",
                      guid, keyname, len);
             ofs = 0x0010;
             break;
         }
         default:
-            die ("Unsupported boot type %u\n", boottype);
+            die ("Unsupported boot type %x\n", boottype);
     }
 
     /* os device */
-    if (nt_cmdline->fsuuid[0] == '0')
-        data[ofs + 0x00] = 0x05; // boot
-    else
-        data[ofs + 0x00] = 0x06; // disk
+    data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
     data[ofs + 0x08] = 0x48;
     memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
     memcpy (data + ofs + 0x24, &nt_cmdline->partmap, sizeof (uint32_t));
@@ -200,7 +197,7 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     if (boottype == NTBOOT_WIM || boottype == NTBOOT_VHD)
         utf8_to_ucs2 ((uint16_t *)(data + ofs + 0x48), MAX_PATH,
                       (uint8_t *)nt_cmdline->filepath);
-    DBG ("...patched %ls->%ls (device)\n", guid, keyname);
+    DBG ("...patched %ls->%ls (device%x)\n", guid, keyname, boottype);
 }
 
 void

@@ -275,7 +275,7 @@ biosdisk_read_real (uint64_t sector, size_t size, unsigned segment)
         if (biosdisk_rw_std (0x02, disk_data.drive,
                              coff, hoff, soff, size, segment))
         {
-            DBG ("failure reading sector 0x%lld from hd%2x\n",
+            DBG ("failure reading sector 0x%llx from hd%2x\n",
                  sector, disk_data.drive);
             return 0;
         }
