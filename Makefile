@@ -11,7 +11,7 @@ OBJECTS += int13.o vdisk.o cpio.o stdio.o die.o efi.o efimain.o
 OBJECTS += efiguid.o efifile.o efipath.o efiboot.o efiblock.o cmdline.o
 OBJECTS += cookie.o paging.o memmap.o
 OBJECTS += reg.o charset.o bcd.o fsuuid.o gpt.o msdos.o
-OBJECTS += biosdisk.o
+OBJECTS += biosdisk.o efidisk.o
 
 # Target-dependent objects
 #

@@ -69,6 +69,9 @@
 /** Page size */
 #define PAGE_SIZE 4096
 
+#define BYTES_TO_PAGES(bytes)   (((bytes) + 0xfff) >> 12)
+#define PAGES_TO_BYTES(pages)   ((pages) << 12)
+
 /** Calculating log base 2 of 64-bit integers */
 #define SECTOR_LOG2ULL(n, s) \
     for (n = 0; (1U << n) < s; n++);
