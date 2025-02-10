@@ -1,8 +1,9 @@
-#ifndef _EFIBOOT_H
-#define _EFIBOOT_H
+#ifndef _PAYLOAD_H
+#define _PAYLOAD_H
 
 /*
- * Copyright (C) 2014 Michael Brown <mbrown@fensystems.co.uk>.
+ * ntloader  --  Microsoft Windows NT6+ loader
+ * Copyright (C) 2025  A1ive.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,18 +21,8 @@
  * 02110-1301, USA.
  */
 
-/**
- * @file
- *
- * EFI boot manager invocation
- *
- */
+#include <stdint.h>
 
-#include "efi.h"
-#include "efi/Protocol/DevicePath.h"
+void extract_initrd (void *ptr, size_t len);
 
-extern void
-efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
-          EFI_HANDLE device);
-
-#endif /* _EFIBOOT_H */
+#endif /* _PAYLOAD_H */

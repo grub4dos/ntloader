@@ -67,6 +67,8 @@ static struct nt_args args =
     .initrd_pathw = L"\\initrd.cpio",
     .bcd = NULL,
     .bcd_length = 0,
+    .bootmgr = NULL,
+    .bootmgr_length = 0,
 };
 
 struct nt_args *nt_cmdline;

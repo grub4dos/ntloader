@@ -34,7 +34,7 @@
 #include "peloader.h"
 #include "int13.h"
 #include "vdisk.h"
-#include "cpio.h"
+#include "payload.h"
 #include "cmdline.h"
 #include "paging.h"
 #include "memmap.h"
@@ -55,9 +55,6 @@ void *initrd;
 
 /** Length of initrd */
 size_t initrd_len;
-
-/** bootmgr.exe file */
-static struct vdisk_file *bootmgr;
 
 /** Minimal length of embedded bootmgr.exe */
 #define BOOTMGR_MIN_LEN 16384
@@ -205,37 +202,6 @@ static struct
 };
 
 /**
- * File handler
- *
- * @v name		File name
- * @v data		File data
- * @v len		Length
- * @ret rc		Return status code
- */
-static int add_file (const char *name, void *data, size_t len)
-{
-    struct vdisk_file *file;
-
-    /* Store file */
-    file = vdisk_add_file (name, data, len, vdisk_read_mem_file);
-
-    /* Check for special-case files */
-    if (strcasecmp (name, "bootmgr.exe") == 0)
-    {
-        DBG ("...found bootmgr.exe\n");
-        bootmgr = file;
-    }
-    else if (strcasecmp (name, "BCD") == 0)
-    {
-        DBG ("...found BCD\n");
-        nt_cmdline->bcd_length = len;
-        nt_cmdline->bcd = data;
-    }
-
-    return 0;
-}
-
-/**
  * Relocate data between 1MB and 2GB if possible
  *
  * @v data		Start of data
@@ -279,7 +245,6 @@ static void *relocate_memory_low (void *data, size_t len)
  */
 int main (void)
 {
-    void *raw_pe;
     struct loaded_pe pe;
     struct paging_state state;
     uint64_t initrd_phys;
@@ -311,23 +276,13 @@ int main (void)
     DBG ("Placing initrd at [%p,%p)\n", initrd, (initrd + initrd_len));
 
     /* Extract files from initrd */
-    if (cpio_extract (initrd, initrd_len, add_file) != 0)
-        die ("FATAL: could not extract initrd files\n");
-    getchar();
-
-    bcd_patch_data ();
-    getchar();
+    extract_initrd (initrd, initrd_len);
 
     /* Add INT 13 drive */
     callback.drive = initialise_int13();
 
-    /* Read bootmgr.exe into memory */
-    if (! bootmgr)
-        die ("FATAL: no bootmgr.exe\n");
-    raw_pe = bootmgr->opaque;
-
     /* Load bootmgr.exe into memory */
-    if (load_pe (raw_pe, bootmgr->len, &pe) != 0)
+    if (load_pe (nt_cmdline->bootmgr, nt_cmdline->bootmgr_length, &pe) != 0)
         die ("FATAL: Could not load bootmgr.exe\n");
 
     /* Relocate initrd above 4GB if possible, to free up 32-bit memory */

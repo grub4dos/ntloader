@@ -80,6 +80,8 @@ struct nt_args
     wchar_t initrd_pathw[MAX_PATH + 1];
     void *bcd;
     uint32_t bcd_length;
+    void *bootmgr;
+    uint32_t bootmgr_length;
 };
 
 extern struct nt_args *nt_cmdline;

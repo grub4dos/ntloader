@@ -99,12 +99,11 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
 /**
  * Boot from EFI device
  *
- * @v file		Virtual file
  * @v path		Device path
  * @v device		Device handle
  */
-void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
-                EFI_HANDLE device)
+void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
+               EFI_HANDLE device)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
     union
@@ -119,7 +118,7 @@ void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
     EFI_STATUS efirc;
 
     /* Allocate memory */
-    pages = ((file->len + PAGE_SIZE - 1) / PAGE_SIZE);
+    pages = ((nt_cmdline->bootmgr_length + PAGE_SIZE - 1) / PAGE_SIZE);
     if ((efirc = bs->AllocatePages (AllocateAnyPages,
                                        EfiBootServicesData, pages,
                                        &phys)) != 0)
@@ -130,18 +129,17 @@ void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
     data = ((void *) (intptr_t) phys);
 
 
-    /* Read image */
-    file->read (file, data, 0, file->len);
-    DBG ("Read %s\n", file->name);
+    /* Copy image */
+    memcpy (data, nt_cmdline->bootmgr, nt_cmdline->bootmgr_length);
 
     /* Load image */
     if ((efirc = bs->LoadImage (FALSE, efi_image_handle, path, data,
-                                   file->len, &handle)) != 0)
+                                   nt_cmdline->bootmgr_length, &handle)) != 0)
     {
-        die ("Could not load %s: %#lx\n",
-              file->name, ((unsigned long) efirc));
+        die ("Could not load bootmgfw.efi: %#lx\n",
+             ((unsigned long) efirc));
     }
-    DBG ("Loaded %s\n", file->name);
+    DBG ("Loaded bootmgfw.efi\n");
 
     /* Get loaded image protocol */
     if ((efirc = bs->OpenProtocol (handle,
@@ -149,8 +147,8 @@ void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
                                       &loaded.intf, efi_image_handle, NULL,
                                       EFI_OPEN_PROTOCOL_GET_PROTOCOL))!=0)
     {
-        die ("Could not get loaded image protocol for %s: %#lx\n",
-              file->name, ((unsigned long) efirc));
+        die ("Could not get loaded image protocol for bootmgfw.efi: %#lx\n",
+             ((unsigned long) efirc));
     }
 
     /* Force correct device handle */
@@ -172,9 +170,9 @@ void efi_boot (struct vdisk_file *file, EFI_DEVICE_PATH_PROTOCOL *path,
     /* Start image */
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
     {
-        die ("Could not start %s: %#lx\n",
-              file->name, ((unsigned long) efirc));
+        die ("Could not start bootmgfw.efi: %#lx\n",
+             ((unsigned long) efirc));
     }
 
-    die ("%s returned\n", file->name);
+    die ("bootmgfw.efi returned\n");
 }

@@ -31,7 +31,7 @@
 #include "ntloader.h"
 #include "vdisk.h"
 #include "cmdline.h"
-#include "cpio.h"
+#include "payload.h"
 #include "efi.h"
 #include "efifile.h"
 #include "efipath.h"
@@ -54,102 +54,13 @@ static struct
     .end = EFI_DEVPATH_END_INIT (efi_initrd_path.end),
 };
 
-/** bootmgfw.efi file */
-struct vdisk_file *bootmgfw;
-
-static void (* efi_read_func) (struct vdisk_file *file, void *data,
-                                  size_t offset, size_t len);
-
-/**
- * Get architecture-specific boot filename
- *
- * @ret bootarch	Architecture-specific boot filename
- */
-static const CHAR16 *efi_bootarch (void)
-{
-    static const CHAR16 bootarch_full[] = EFI_REMOVABLE_MEDIA_FILE_NAME;
-    const CHAR16 *tmp;
-    const CHAR16 *bootarch = bootarch_full;
-
-    for (tmp = bootarch_full ; *tmp ; tmp++)
-    {
-        if (*tmp == L'\\')
-            bootarch = (tmp + 1);
-    }
-    return bootarch;
-}
-
-/**
- * Read from EFI file
- *
- * @v vfile		Virtual file
- * @v data		Data buffer
- * @v offset		Offset
- * @v len		Length
- */
-static void efi_read_file (struct vdisk_file *vfile, void *data,
-                            size_t offset, size_t len)
-{
-    EFI_FILE_PROTOCOL *file = vfile->opaque;
-    UINTN size = len;
-    EFI_STATUS efirc;
-
-    /* Set file position */
-    if ((efirc = file->SetPosition (file, offset)) != 0)
-    {
-        die ("Could not set file position: %#lx\n",
-              ((unsigned long) efirc));
-    }
-
-    /* Read from file */
-    if ((efirc = file->Read (file, &size, data)) != 0)
-    {
-        die ("Could not read from file: %#lx\n",
-              ((unsigned long) efirc));
-    }
-}
-
-/**
- * File handler
- *
- * @v name		File name
- * @v data		File data
- * @v len		Length
- * @ret rc		Return status code
- */
-static int efi_add_file (const char *name, void *data, size_t len)
-{
-    struct vdisk_file *vfile;
-    char bootarch[32];
-
-    snprintf (bootarch, sizeof (bootarch), "%ls", efi_bootarch());
-
-    vfile = vdisk_add_file (name, data, len, efi_read_func);
-
-    /* Check for special-case files */
-    if ((strcasecmp (name, bootarch) == 0) ||
-         (strcasecmp (name, "bootmgfw.efi") == 0))
-    {
-        DBG ("...found bootmgfw.efi file %s\n", name);
-        bootmgfw = vfile;
-    }
-    else if (strcasecmp (name, "BCD") == 0)
-    {
-        DBG ("...found BCD\n");
-        nt_cmdline->bcd_length = len;
-        nt_cmdline->bcd = data;
-    }
-
-    return 0;
-}
-
 /**
  * Extract files from Linux initrd media
  *
  * @ret rc		Return status code
  */
 static int
-efi_extract_initrd (void)
+efi_load_lf2_initrd (void)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
     EFI_HANDLE lf2_handle;
@@ -195,9 +106,7 @@ efi_extract_initrd (void)
     if (efirc != EFI_SUCCESS)
         die ("Could not read initrd.\n");
 
-    efi_read_func = vdisk_read_mem_file;
-    if (cpio_extract (initrd, initrd_len, efi_add_file) != 0)
-        die ("FATAL: could not extract initrd files\n");
+    extract_initrd (initrd, initrd_len);
 
     return 0;
 }
@@ -207,89 +116,9 @@ efi_extract_initrd (void)
  *
  * @v handle		Device handle
  */
-void efi_extract (EFI_HANDLE handle)
+void efi_extract (EFI_HANDLE handle __unused)
 {
-    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-    union
-    {
-        EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
-        void *interface;
-    } fs;
-    struct
-    {
-        EFI_FILE_INFO file;
-        CHAR16 name[ VDISK_NAME_LEN + 1 /* WNUL */ ];
-    } __attribute__ ((packed)) info;
-    char name[ VDISK_NAME_LEN + 1 /* NUL */ ];
-    EFI_FILE_PROTOCOL *root;
-    EFI_FILE_PROTOCOL *file;
-    UINTN size;
-    CHAR16 *wname;
-    EFI_STATUS efirc;
-
     /* Extract files from initrd media */
-    if (efi_extract_initrd () == 0)
-        goto out;
-
-    /* Open file system */
-    if ((efirc = bs->OpenProtocol (handle,
-                                      &efi_simple_file_system_protocol_guid,
-                                      &fs.interface, efi_image_handle, NULL,
-                                      EFI_OPEN_PROTOCOL_GET_PROTOCOL))!=0)
-    {
-        die ("Could not open simple file system: %#lx\n",
-              ((unsigned long) efirc));
-    }
-
-    /* Open root directory */
-    if ((efirc = fs.fs->OpenVolume (fs.fs, &root)) != 0)
-    {
-        die ("Could not open root directory: %#lx\n",
-              ((unsigned long) efirc));
-    }
-
-    /* Close file system */
-    bs->CloseProtocol (handle, &efi_simple_file_system_protocol_guid,
-                        efi_image_handle, NULL);
-
-    /* Read root directory */
-    while (1)
-    {
-
-        /* Read directory entry */
-        size = sizeof (info);
-        if ((efirc = root->Read (root, &size, &info)) != 0)
-        {
-            die ("Could not read root directory: %#lx\n",
-                  ((unsigned long) efirc));
-        }
-        if (size == 0)
-            break;
-
-        /* Ignore subdirectories */
-        if (info.file.Attribute & EFI_FILE_DIRECTORY)
-            continue;
-
-        /* Open file */
-        wname = info.file.FileName;
-        if ((efirc = root->Open (root, &file, wname,
-                                    EFI_FILE_MODE_READ, 0)) != 0)
-        {
-            die ("Could not open \"%ls\": %#lx\n",
-                  wname, ((unsigned long) efirc));
-        }
-
-        /* Add file */
-        snprintf (name, sizeof (name), "%ls", wname);
-        efi_read_func = efi_read_file;
-        efi_add_file (name, file, info.file.FileSize);
-    }
-
-out:
-    /* Check that we have a boot file */
-    if (! bootmgfw)
-    {
-        die ("FATAL: no %ls or bootmgfw.efi found\n",
-              efi_bootarch());
-    }
+    if (efi_load_lf2_initrd () != 0)
+        die ("Could not load initrd\n");
 }
