@@ -28,6 +28,7 @@ HEADERS := $(wildcard *.h)
 #
 ECHO		?= echo
 CP		?= cp
+CD		?= cd
 RM		?= rm
 CUT		?= cut
 CC		?= cc
@@ -274,6 +275,15 @@ elf2efi64 : utils/elf2efi.c Makefile
 
 ###############################################################################
 #
+# Initrd rootfs
+
+ROOTFS_DIR := utils/rootfs
+ROOTFS_FILES := $(shell find $(ROOTFS_DIR) -type f)
+initrd.cpio : $(ROOTFS_FILES)
+	@$(CD) $(ROOTFS_DIR) && find * | cpio -o -H newc > ../../$@
+
+###############################################################################
+#
 # fsuuid
 
 fsuuid.exe : utils/fsuuid.c
@@ -290,6 +300,7 @@ clean :
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f elf2efi32 elf2efi64
 	$(RM) -f fsuuid fsuuid.exe
+	$(RM) -f initrd.cpio
 	$(RM) -f ntloader.i386 ntloader.i386.*
 	$(RM) -f ntloader.x86_64 ntloader.x86_64.*
 	$(RM) -f ntloader.arm64 ntloader.arm64.*
