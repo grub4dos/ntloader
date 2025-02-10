@@ -30,6 +30,14 @@ enum reg_bool
     true  = 1,
 };
 
+static inline int32_t
+get_int32_size (uint8_t *data, uint64_t offset)
+{
+    int32_t ret;
+    memcpy (&ret, data + offset, sizeof (int32_t));
+    return -ret;
+}
+
 static enum reg_bool check_header(hive_t *h)
 {
     HBASE_BLOCK *base_block = (HBASE_BLOCK *)h->data;
@@ -120,12 +128,14 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
               wchar_t *Name, uint32_t NameLength)
 {
     int32_t size;
+    CM_KEY_NODE *nk;
+    CM_KEY_FAST_INDEX *lh;
     enum reg_bool overflow = false;
 
     // FIXME - make sure no buffer overruns (here and elsewhere)
     // find parent key node
 
-    size = -*(int32_t *)((uint8_t *)h->data + Key);
+    size = get_int32_size (h->data, Key);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -133,7 +143,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
         return REG_ERR_BAD_ARGUMENT;
 
-    CM_KEY_NODE *nk = (CM_KEY_NODE *)((uint8_t *)h->data + Key + sizeof(int32_t));
+    nk = (CM_KEY_NODE *)((uint8_t *)h->data + Key + sizeof(int32_t));
 
     if (nk->Signature != CM_KEY_NODE_SIGNATURE)
         return REG_ERR_BAD_ARGUMENT;
@@ -149,7 +159,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
 
     // go to key index
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList);
+    size = get_int32_size (h->data, 0x1000 + nk->SubKeyList);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -157,8 +167,8 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0]))
         return REG_ERR_BAD_ARGUMENT;
 
-    CM_KEY_FAST_INDEX *lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList +
-                                    sizeof(int32_t));
+    lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000
+                               + nk->SubKeyList + sizeof(int32_t));
 
     if (lh->Signature == CM_KEY_INDEX_ROOT)
     {
@@ -200,7 +210,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
 
     // find child key node
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + lh->List[Index].Cell);
+    size = get_int32_size (h->data, 0x1000 + lh->List[Index].Cell);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -208,8 +218,8 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
         return REG_ERR_BAD_ARGUMENT;
 
-    CM_KEY_NODE *nk2 = (CM_KEY_NODE *)((uint8_t *)h->data + 0x1000 + lh->List[Index].Cell +
-                               sizeof(int32_t));
+    CM_KEY_NODE *nk2 = (CM_KEY_NODE *)((uint8_t *)h->data + 0x1000
+                        + lh->List[Index].Cell + sizeof(int32_t));
 
     if (nk2->Signature != CM_KEY_NODE_SIGNATURE)
         return REG_ERR_BAD_ARGUMENT;
@@ -267,7 +277,7 @@ find_child_key(hive_t *h, HKEY parent,
 
     // find parent key node
 
-    size = -*(int32_t *)((uint8_t *)h->data + parent);
+    size = get_int32_size (h->data, parent);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -289,7 +299,7 @@ find_child_key(hive_t *h, HKEY parent,
 
     // go to key index
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList);
+    size = get_int32_size (h->data, 0x1000 + nk->SubKeyList);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -297,8 +307,8 @@ find_child_key(hive_t *h, HKEY parent,
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0]))
         return REG_ERR_BAD_ARGUMENT;
 
-    lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList +
-                               sizeof(int32_t));
+    lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000
+                                + nk->SubKeyList + sizeof(int32_t));
 
     if (lh->Signature != CM_KEY_HASH_LEAF && lh->Signature != CM_KEY_FAST_LEAF)
         return REG_ERR_BAD_ARGUMENT;
@@ -313,7 +323,7 @@ find_child_key(hive_t *h, HKEY parent,
     {
         CM_KEY_NODE *nk2;
 
-        size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + lh->List[i].Cell);
+        size = get_int32_size (h->data, 0x1000 + lh->List[i].Cell);
 
         if (size < 0)
             continue;
@@ -321,8 +331,8 @@ find_child_key(hive_t *h, HKEY parent,
         if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
             continue;
 
-        nk2 = (CM_KEY_NODE *)((uint8_t *)h->data + 0x1000 + lh->List[i].Cell + sizeof(
-                                  int32_t));
+        nk2 = (CM_KEY_NODE *)((uint8_t *)h->data + 0x1000
+                              + lh->List[i].Cell + sizeof(int32_t));
 
         if (nk2->Signature != CM_KEY_NODE_SIGNATURE)
             continue;
@@ -438,7 +448,7 @@ reg_enum_values(hive_t *h, HKEY Key,
 
     // find key node
 
-    size = -*(int32_t *)((uint8_t *)h->data + Key);
+    size = get_int32_size (h->data, Key);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -460,7 +470,7 @@ reg_enum_values(hive_t *h, HKEY Key,
 
     // go to key index
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + nk->Values);
+    size = get_int32_size (h->data, 0x1000 + nk->Values);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -472,7 +482,7 @@ reg_enum_values(hive_t *h, HKEY Key,
 
     // find value node
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + list[Index]);
+    size = get_int32_size (h->data, 0x1000 + list[Index]);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -480,8 +490,8 @@ reg_enum_values(hive_t *h, HKEY Key,
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_VALUE, Name[0]))
         return REG_ERR_BAD_ARGUMENT;
 
-    vk = (CM_KEY_VALUE *)((uint8_t *)h->data + 0x1000 + list[Index] + sizeof(
-                              int32_t));
+    vk = (CM_KEY_VALUE *)((uint8_t *)h->data + 0x1000
+                          + list[Index] + sizeof(int32_t));
 
     if (vk->Signature != CM_KEY_VALUE_SIGNATURE)
         return REG_ERR_BAD_ARGUMENT;
@@ -543,7 +553,7 @@ reg_query_value(hive_t *h, HKEY Key,
 
     // find key node
 
-    size = -*(int32_t *)((uint8_t *)h->data + Key);
+    size = get_int32_size (h->data, Key);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -565,7 +575,7 @@ reg_query_value(hive_t *h, HKEY Key,
 
     // go to key index
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + nk->Values);
+    size = get_int32_size (h->data, 0x1000 + nk->Values);
 
     if (size < 0)
         return REG_ERR_FILE_NOT_FOUND;
@@ -581,7 +591,7 @@ reg_query_value(hive_t *h, HKEY Key,
     {
         CM_KEY_VALUE *vk;
 
-        size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + list[i]);
+        size = get_int32_size (h->data, 0x1000 + list[i]);
 
         if (size < 0)
             continue;
@@ -654,13 +664,17 @@ reg_query_value(hive_t *h, HKEY Key,
         {
             size_t datalen = vk->DataLength & ~CM_KEY_VALUE_SPECIAL_SIZE;
             uint8_t *ptr;
-
+#if 0
             if (datalen == 4)
                 ptr = (uint8_t *)&vk->Data;
             else if (datalen == 2)
                 ptr = (uint8_t *)&vk->Data + 2;
             else if (datalen == 1)
                 ptr = (uint8_t *)&vk->Data + 3;
+#else
+            if (datalen == 4 || datalen == 2 || datalen == 1)
+                ptr = (uint8_t *)&vk->Data;
+#endif
             else if (datalen == 0)
                 ptr = NULL;
             else
@@ -670,7 +684,7 @@ reg_query_value(hive_t *h, HKEY Key,
         }
         else
         {
-            size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + vk->Data);
+            size = get_int32_size (h->data, 0x1000 + vk->Data);
 
             if ((uint32_t)size < vk->DataLength)
                 return REG_ERR_BAD_ARGUMENT;
@@ -692,9 +706,10 @@ reg_query_value(hive_t *h, HKEY Key,
 static void clear_volatile(hive_t *h, HKEY key)
 {
     int32_t size;
+    CM_KEY_NODE *nk;
     uint16_t sig;
 
-    size = -*(int32_t *)((uint8_t *)h->data + key);
+    size = get_int32_size (h->data, key);
 
     if (size < 0)
         return;
@@ -702,7 +717,7 @@ static void clear_volatile(hive_t *h, HKEY key)
     if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
         return;
 
-    CM_KEY_NODE *nk = (CM_KEY_NODE *)((uint8_t *)h->data + key + sizeof(int32_t));
+    nk = (CM_KEY_NODE *)((uint8_t *)h->data + key + sizeof(int32_t));
 
     if (nk->Signature != CM_KEY_NODE_SIGNATURE)
         return;
@@ -713,23 +728,23 @@ static void clear_volatile(hive_t *h, HKEY key)
     if (nk->SubKeyCount == 0 || nk->SubKeyList == 0xffffffff)
         return;
 
-    size = -*(int32_t *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList);
-
-    sig = *(uint16_t *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList + sizeof(
-                            int32_t));
+    size = get_int32_size (h->data, 0x1000 + nk->SubKeyList);
+    memcpy (&sig, (uint8_t*)h->data + 0x1000 + nk->SubKeyList + sizeof(int32_t), sizeof(uint16_t));
 
     if (sig == CM_KEY_HASH_LEAF || sig == CM_KEY_FAST_LEAF)
     {
-        CM_KEY_FAST_INDEX *lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList +
-                                        sizeof(int32_t));
+        CM_KEY_FAST_INDEX *lh =
+            (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000
+                                  + nk->SubKeyList + sizeof(int32_t));
 
         for (unsigned int i = 0; i < lh->Count; i++)
             clear_volatile(h, 0x1000 + lh->List[i].Cell);
     }
     else if (sig == CM_KEY_INDEX_ROOT)
     {
-        CM_KEY_INDEX *ri = (CM_KEY_INDEX *)((uint8_t *)h->data + 0x1000 + nk->SubKeyList +
-                                   sizeof(int32_t));
+        CM_KEY_INDEX *ri =
+            (CM_KEY_INDEX *)((uint8_t *)h->data + 0x1000
+                             + nk->SubKeyList + sizeof(int32_t));
 
         for (unsigned int i = 0; i < ri->Count; i++)
             clear_volatile(h, 0x1000 + ri->List[i]);
