@@ -45,6 +45,7 @@
 #define NTARG_BOOL_TRUE  1
 #define NTARG_BOOL_FALSE 0
 #define NTARG_BOOL_UNSET 0xff
+#define NTARG_BOOL_NA    0x0f
 
 struct nt_args
 {
@@ -62,6 +63,7 @@ struct nt_args
     uint64_t pae;
     uint64_t timeout;
     uint64_t safeboot;
+    uint64_t gfxmode;
 
     char loadopt[128];
     char winload[64];

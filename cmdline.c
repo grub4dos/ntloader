@@ -51,6 +51,7 @@ static struct nt_args args =
     .pae = PAE_DEFAULT,
     .timeout = 0,
     .safeboot = SAFE_MINIMAL,
+    .gfxmode = GFXMODE_1024X768,
 
     .loadopt = BCD_DEFAULT_CMDLINE,
     .winload = "",
@@ -240,6 +241,16 @@ void process_cmdline (char *cmdline)
                 args.safeboot = SAFE_NETWORK;
             else if (strcasecmp (value, "DsRepair") == 0)
                 args.safeboot = SAFE_DSREPAIR;
+        }
+        else if (strcmp (key, "gfxmode") == 0)
+        {
+            args.hires = NTARG_BOOL_NA;
+            if (! value || strcasecmp (value, "1024x768") == 0)
+                args.gfxmode = GFXMODE_1024X768;
+            else if (strcasecmp (value, "800x600") == 0)
+                args.gfxmode = GFXMODE_800X600;
+            else if (strcasecmp (value, "1024x600") == 0)
+                args.gfxmode = GFXMODE_1024X600;
         }
         else if (strcmp (key, "loadopt") == 0)
         {

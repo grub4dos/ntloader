@@ -254,15 +254,9 @@ bcd_patch_data (void)
 
     /* Patch Objects->{Options} */
     bcd_patch_sz (&hive, objects, GUID_OPTN,
-                  BCDOPT_WINLOAD, nt_cmdline->winload);
-    bcd_patch_sz (&hive, objects, GUID_OPTN,
-                  BCDOPT_SYSROOT, nt_cmdline->sysroot);
-    bcd_patch_sz (&hive, objects, GUID_OPTN,
                   BCDOPT_CMDLINE, nt_cmdline->loadopt);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
                     BCDOPT_TESTMODE, nt_cmdline->testmode);
-    bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_HIGHRES, nt_cmdline->hires);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
                     BCDOPT_DETHAL, nt_cmdline->hal);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
@@ -275,6 +269,20 @@ bcd_patch_data (void)
                    BCDOPT_NX, nt_cmdline->nx);
     bcd_patch_u64 (&hive, objects, GUID_OPTN,
                    BCDOPT_PAE, nt_cmdline->pae);
+
+    /* Patch Objects->{Resolution} */
+    if (nt_cmdline->hires == NTARG_BOOL_NA)
+    {
+        bcd_patch_szw (&hive, objects, GUID_OPTN,
+                       BCDOPT_INHERIT, GUID_LRES);
+        bcd_patch_u64 (&hive, objects, GUID_LRES,
+                       BCDOPT_GFXMODE, nt_cmdline->gfxmode);
+    }
+    else
+    {
+        bcd_patch_bool (&hive, objects, GUID_HRES,
+                        BCDOPT_HIGHRES, nt_cmdline->hires);
+    }
 
     /* Patch Objects->{SafeBoot} */
     if (nt_cmdline->safemode)
@@ -295,6 +303,10 @@ bcd_patch_data (void)
                   entry_guid, BCDOPT_APPDEV); // app device
     bcd_patch_dp (&hive, objects, nt_cmdline->boottype,
                   entry_guid, BCDOPT_OSDDEV); // os device
+    bcd_patch_sz (&hive, objects, entry_guid,
+                  BCDOPT_WINLOAD, nt_cmdline->winload);
+    bcd_patch_sz (&hive, objects, entry_guid,
+                  BCDOPT_SYSROOT, nt_cmdline->sysroot);
 
     if (efi_systab)
         bcd_replace_suffix (L".exe", L".efi");
