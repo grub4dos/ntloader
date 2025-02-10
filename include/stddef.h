@@ -29,14 +29,14 @@
 
 #include <stdint.h>
 
-#define NULL ( ( void * ) 0 )
+#define NULL ((void *) 0)
 
-#define offsetof( __type, __member ) ( ( size_t ) &( ( __type * ) NULL )->__member )
+#define offsetof(__type, __member) ((size_t) &((__type *) NULL)->__member)
 
-#define container_of( __ptr, __type, __member ) \
-    ( { \
-        const typeof ( ( ( __type * ) NULL )->__member ) *__mptr = (__ptr); \
-        ( __type * ) ( ( void * ) __mptr - offsetof ( __type, __member ) ); \
-    } )
+#define container_of(__ptr, __type, __member) \
+({ \
+    const typeof (((__type *) NULL)->__member) *__mptr = (__ptr); \
+    (__type *) ((void *) __mptr - offsetof (__type, __member)); \
+})
 
 #endif /* _STDDEF_H */

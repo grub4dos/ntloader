@@ -21,261 +21,295 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <strings.h>
 #include <wchar.h>
-#include <ntboot.h>
-#include <reg.h>
-#include <bcd.h>
-#include <cmdline.h>
-#include <charset.h>
-#include <efi.h>
-
-#define BCD_DP_MAGIC "GNU GRUB2 NTBOOT"
-
+#include "ntloader.h"
+#include "reg.h"
+#include "bcd.h"
+#include "cmdline.h"
+#include "charset.h"
+#include "efi.h"
 
 static void
-bcd_print_hex (const void *data, size_t len)
+bcd_replace_suffix (const wchar_t *src, const wchar_t *dst)
 {
-  const uint8_t *p = data;
-  size_t i;
-  for (i = 0; i < len; i++)
-    DBG2 ("%02x ", p[i]);
-}
-
-static void
-bcd_replace_hex (const void *search, uint32_t search_len,
-                 const void *replace, uint32_t replace_len, int count)
-{
-  uint8_t *p = nt_cmdline->bcd_data;
-  uint32_t offset;
-  int cnt = 0;
-  for (offset = 0; offset + search_len < nt_cmdline->bcd_len; offset++)
-  {
-    if (memcmp (p + offset, search, search_len) == 0)
+    uint8_t *p = nt_cmdline->bcd;
+    uint32_t ofs;
+    const size_t len = sizeof(wchar_t) * 5; // . E F I \0
+    for (ofs = 0; ofs + len < nt_cmdline->bcd_length; ofs++)
     {
-      cnt++;
-
-      DBG2 ("0x%08x ", offset);
-      bcd_print_hex (search, search_len);
-      DBG2 ("\n---> ");
-      bcd_print_hex (replace, replace_len);
-      DBG2 ("\n");
-
-      memcpy (p + offset, replace, replace_len);
-      DBG ("...patched BCD at %#x len %d\n", offset, replace_len);
-      if (count && cnt == count)
-        break;
+        if (memcmp (p + ofs, src, len) == 0)
+        {
+            memcpy (p + ofs, dst, len);
+            DBG ("...patched BCD at %#x (%ls->%ls)\n", ofs, src, dst);
+        }
     }
-  }
 }
 
-static void
-bcd_patch_path (void)
+static void *
+bcd_find_hive (hive_t *hive, HKEY objects,
+               const wchar_t *guid, const wchar_t *keyname,
+               uint32_t *len)
 {
-  const char *search = "\\PATH_SIGN";
-  utf8_to_ucs2 (nt_cmdline->path16, MAX_PATH, (uint8_t *)nt_cmdline->path);
-  bcd_replace_hex (search, strlen (search),
-                   nt_cmdline->path16, sizeof (nt_cmdline->path), 0);
+    HKEY entry, elements, key;
+    void *data = NULL;
+    uint32_t type;
+
+    if (reg_find_key (hive, objects, guid, &entry) != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", guid);
+    if (reg_find_key (hive, entry, BCD_REG_HKEY, &elements)
+        != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", BCD_REG_HKEY);
+    if (reg_find_key (hive, elements, keyname, &key)
+        != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", keyname);
+    if (reg_query_value (hive, key, BCD_REG_HVAL,
+        (void **)&data, len, &type) != REG_ERR_NONE)
+        die ("Can't find HVAL %ls\n", BCD_REG_HVAL);
+    return data;
 }
 
-static void
-bcd_patch_hive (reg_hive_t *hive, const wchar_t *keyname, void *val)
+static inline void
+bcd_patch_bool (hive_t *hive, HKEY objects,
+                const wchar_t *guid, const wchar_t *keyname,
+                uint8_t val)
 {
-  HKEY root, objects, osloader, elements, key;
-  uint8_t *data = NULL;
-  uint32_t data_len = 0, type;
-  hive->find_root (hive, &root);
-  hive->find_key (hive, root, BCD_REG_ROOT, &objects);
-  if (wcscasecmp (keyname, BCDOPT_TIMEOUT) == 0)
-    hive->find_key (hive, objects, GUID_BOOTMGR, &osloader);
-  else if (wcscasecmp (keyname, BCDOPT_DISPLAY) == 0)
-    hive->find_key (hive, objects, GUID_BOOTMGR, &osloader);
-  else if (wcscasecmp (keyname, BCDOPT_IMGOFS) == 0)
-    hive->find_key (hive, objects, GUID_RAMDISK, &osloader);
-  else
-    hive->find_key (hive, objects, GUID_OSENTRY, &osloader);
-  hive->find_key (hive, osloader, BCD_REG_HKEY, &elements);
-  hive->find_key (hive, elements, keyname, &key);
-  hive->query_value_no_copy (hive, key, BCD_REG_HVAL,
-                             (void **)&data, &data_len, &type);
-  memcpy (data, val, data_len);
-  DBG ("...patched %p len %d\n", data, data_len);
+    uint8_t *data;
+    uint32_t len;
+    data = bcd_find_hive (hive, objects, guid, keyname, &len);
+    if (len != sizeof (uint8_t))
+        die ("Invalid bool size %x\n", len);
+    memcpy (data, &val, sizeof (uint8_t));
+    DBG ("...patched %ls->%ls (%c)\n", guid, keyname, val ? 'y' : 'n');
 }
 
-static void
-bcd_parse_bool (reg_hive_t *hive, const wchar_t *keyname, const char *s)
+static inline void
+bcd_patch_u64 (hive_t *hive, HKEY objects,
+               const wchar_t *guid, const wchar_t *keyname,
+               uint64_t val)
 {
-  uint8_t val = 0;
-  if (strcasecmp (s, "yes") == 0 || strcasecmp (s, "on") == 0 ||
-      strcasecmp (s, "true") == 0 || strcasecmp (s, "1") == 0)
-    val = 1;
-  DBG ("...patching key %ls value %d\n", keyname, val);
-  bcd_patch_hive (hive, keyname, &val);
+    uint8_t *data;
+    uint32_t len;
+    data = bcd_find_hive (hive, objects, guid, keyname, &len);
+    if (len != sizeof (uint64_t))
+        die ("Invalid u64 size %x\n", len);
+    memcpy (data, &val, sizeof (uint64_t));
+    DBG ("...patched %ls->%ls (%llx)\n", guid, keyname, val);
 }
 
-static void
-bcd_parse_u64 (reg_hive_t *hive, const wchar_t *keyname, const char *s)
+static inline void
+bcd_patch_sz (hive_t *hive, HKEY objects,
+              const wchar_t *guid, const wchar_t *keyname,
+              const char *str)
 {
-  uint64_t val = 0;
-  val = strtoul (s, NULL, 0);
-  bcd_patch_hive (hive, keyname, &val);
+    uint16_t *data;
+    uint32_t len;
+    data = bcd_find_hive (hive, objects, guid, keyname, &len);
+    memset (data, 0, len);
+    utf8_to_ucs2 (data, len / sizeof (wchar_t), (uint8_t *) str);
+    DBG ("...patched %ls->%ls (%ls)\n",
+         guid, keyname, (wchar_t *) data);
 }
 
-static void
-bcd_parse_str (reg_hive_t *hive, const wchar_t *keyname,
-               uint8_t resume, const char *s)
+static inline void
+bcd_patch_szw (hive_t *hive, HKEY objects,
+               const wchar_t *guid, const wchar_t *keyname,
+               const wchar_t *str)
 {
-  HKEY root, objects, osloader, elements, key;
-  uint16_t *data = NULL;
-  uint32_t data_len = 0, type;
-  DBG ("...patching key %ls value %s\n", keyname, s);
-  hive->find_root (hive, &root);
-  hive->find_key (hive, root, BCD_REG_ROOT, &objects);
-  if (resume)
-    hive->find_key (hive, objects, GUID_REENTRY, &osloader);
-  else
-    hive->find_key (hive, objects, GUID_OSENTRY, &osloader);
-  hive->find_key (hive, osloader, BCD_REG_HKEY, &elements);
-  hive->find_key (hive, elements, keyname, &key);
-  hive->query_value_no_copy (hive, key, BCD_REG_HVAL,
-                             (void **)&data, &data_len, &type);
-  memset (data, 0, data_len);
-  utf8_to_ucs2 (data, data_len / sizeof (wchar_t), (uint8_t *)s);
+    uint16_t *data;
+    uint32_t len;
+    size_t wlen = wcslen (str) * sizeof (wchar_t);
+    data = bcd_find_hive (hive, objects, guid, keyname, &len);
+    if (wlen > len)
+        die ("Invalid wchar size %zu\n", wlen);
+    memset (data, 0, len);
+    memcpy (data, str, wlen);
+    DBG ("...patched %ls->%ls (%ls)\n", guid, keyname, str);
+}
+
+static inline void
+bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
+              const wchar_t *guid, const wchar_t *keyname)
+{
+    uint8_t *data;
+    uint32_t len, ofs;
+    uint8_t sdi[] = GUID_BIN_RAMDISK;
+    data = bcd_find_hive (hive, objects, guid, keyname, &len);
+    memset (data, 0, len);
+    switch (boottype)
+    {
+        case NTBOOT_WIM:
+        {
+            if (len < 0x028a)
+                die ("WIM device path (%ls->%ls) length error (%x)\n",
+                    guid, keyname, len);
+            memcpy (data + 0x0000, sdi, sizeof (sdi)); // sdi guid
+            data[0x0014] = 0x01;
+            data[0x0018] = 0x7a; data[0x0019] = 0x02; // len - 0x10
+            data[0x0020] = 0x03;
+            data[0x0038] = 0x01;
+            data[0x003c] = 0x52; data[0x003d] = 0x02; // len - 0x38
+            data[0x0040] = 0x05;
+            ofs = 0x0044;
+            break;
+        }
+        case NTBOOT_VHD:
+        {
+            if (len < 0x02bc)
+                die ("VHD device path (%ls->%ls) length error (%x)\n",
+                     guid, keyname, len);
+            data[0x0010] = 0x08;
+            data[0x0018] = 0xac; data[0x0019] = 0x02; // len - 0x10
+            data[0x0024] = 0x02;
+            data[0x0027] = 0x12;
+            data[0x0028] = 0x1e;
+            data[0x0036] = 0x8e; data[0x0037] = 0x02; // len - 0x2e
+            data[0x003e] = 0x06;
+            data[0x005e] = 0x66; data[0x005f] = 0x02; // len - 0x56
+            data[0x0066] = 0x05;
+            data[0x006a] = 0x01;
+            data[0x006e] = 0x52; data[0x006f] = 0x02; // len - 0x6a
+            data[0x0072] = 0x05;
+            ofs = 0x0076;
+            break;
+        }
+        case NTBOOT_WOS:
+        case NTBOOT_REC:
+        {
+            if (len < 0x0058)
+                die ("OS device path (%ls->%ls) length error (%x)\n",
+                     guid, keyname, len);
+            ofs = 0x0010;
+            break;
+        }
+        default:
+            die ("Unsupported boot type %x\n", boottype);
+    }
+
+    /* os device */
+    data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
+    data[ofs + 0x08] = 0x48;
+    memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
+    data[ofs + 0x24] = nt_cmdline->partmap;
+    memcpy (data + ofs + 0x28, nt_cmdline->diskid, 16);
+    if (boottype == NTBOOT_WIM || boottype == NTBOOT_VHD)
+        utf8_to_ucs2 ((uint16_t *)(data + ofs + 0x48), MAX_PATH,
+                      (uint8_t *)nt_cmdline->filepath);
+    DBG ("...patched %ls->%ls (device%x)\n", guid, keyname, boottype);
 }
 
 void
 bcd_patch_data (void)
 {
-  static const wchar_t a[] = L".exe";
-  static const wchar_t b[] = L".efi";
-  reg_hive_t *hive = NULL;
-  if (open_hive (nt_cmdline->bcd_data, nt_cmdline->bcd_len, &hive) || !hive)
-    die ("BCD hive load error.\n");
-  else
+    const wchar_t *entry_guid;
+    HKEY root, objects;
+    hive_t hive =
+    {
+        .size = nt_cmdline->bcd_length,
+        .data = nt_cmdline->bcd,
+    };
+
+    /* Open BCD hive */
+    if (reg_open_hive (&hive) != REG_ERR_NONE)
+        die ("BCD hive load error.\n");
+    reg_find_root (&hive, &root);
+    if (reg_find_key (&hive, root, BCD_REG_ROOT, &objects)
+        != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", BCD_REG_ROOT);
     DBG ("BCD hive load OK.\n");
 
-  if (nt_cmdline->type != BOOT_WIN)
-    bcd_patch_path ();
+    /* Check entry type */
+    switch (nt_cmdline->boottype)
+    {
+        case NTBOOT_VHD:
+            entry_guid = GUID_VHDB;
+            break;
+        case NTBOOT_WOS:
+            entry_guid = GUID_WOSB;
+            break;
+        case NTBOOT_WIM:
+        default:
+            entry_guid = GUID_WIMB;
+    }
 
-  bcd_replace_hex (BCD_DP_MAGIC, strlen (BCD_DP_MAGIC),
-                   &nt_cmdline->info, sizeof (struct bcd_disk_info), 0);
+    /* Patch Objects->{BootMgr} */
+    bcd_patch_szw (&hive, objects, GUID_BOOTMGR,
+                   BCDOPT_OBJECT, entry_guid); // default object
+    bcd_patch_szw (&hive, objects, GUID_BOOTMGR,
+                   BCDOPT_ORDER, entry_guid); // menu display order
+    bcd_patch_u64 (&hive, objects, GUID_BOOTMGR,
+                   BCDOPT_TIMEOUT, nt_cmdline->timeout); // timeout
 
-  /* display menu
-   * default:   no */
-  bcd_parse_bool (hive, BCDOPT_DISPLAY, "yes");
-  /* timeout
-   * default:   1 */
-  bcd_parse_u64 (hive, BCDOPT_TIMEOUT, "0");
-  /* testsigning
-   * default:   no */
-  if (nt_cmdline->test_mode[0])
-    bcd_parse_bool (hive, BCDOPT_TESTMODE, nt_cmdline->test_mode);
-  else
-    bcd_parse_bool (hive, BCDOPT_TESTMODE, "no");
-  /* force highest resolution
-   * default:   no */
-  if (nt_cmdline->hires[0])
-    bcd_parse_bool (hive, BCDOPT_HIGHEST, nt_cmdline->hires);
-  else
-    bcd_parse_bool (hive, BCDOPT_HIGHEST, "no");
-  /* detect hal and kernel
-   * default:   yes */
-  if (nt_cmdline->detecthal[0])
-    bcd_parse_bool (hive, BCDOPT_DETHAL, nt_cmdline->detecthal);
-  else
-    bcd_parse_bool (hive, BCDOPT_DETHAL, "yes");
-  /* winpe mode
-   * default:
-   *      OS  - no
-   *      VHD - no
-   *      WIM - yes */
-  if (nt_cmdline->minint[0])
-    bcd_parse_bool (hive, BCDOPT_WINPE, nt_cmdline->minint);
-  else
-  {
-    if (nt_cmdline->type == BOOT_WIM)
-      bcd_parse_bool (hive, BCDOPT_WINPE, "yes");
+    /* Patch Objects->{Resume} */
+    bcd_patch_dp (&hive, objects, NTBOOT_REC,
+                  GUID_HIBR, BCDOPT_APPDEV); // app device
+    bcd_patch_dp (&hive, objects, NTBOOT_REC,
+                  GUID_HIBR, BCDOPT_OSDDEV); // os device
+    bcd_patch_sz (&hive, objects, GUID_HIBR,
+                  BCDOPT_WINLOAD, BCD_DEFAULT_WINRESUME); // resume
+    bcd_patch_sz (&hive, objects, GUID_HIBR,
+                  BCDOPT_SYSROOT, BCD_DEFAULT_HIBERFIL); // hiberfil
+
+    /* Patch Objects->{Options} */
+    bcd_patch_sz (&hive, objects, GUID_OPTN,
+                  BCDOPT_CMDLINE, nt_cmdline->loadopt);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_TESTMODE, nt_cmdline->testmode);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_DETHAL, nt_cmdline->hal);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_WINPE, nt_cmdline->minint);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_NOVGA, nt_cmdline->novga);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_NOVESA, nt_cmdline->novesa);
+    bcd_patch_u64 (&hive, objects, GUID_OPTN,
+                   BCDOPT_NX, nt_cmdline->nx);
+    bcd_patch_u64 (&hive, objects, GUID_OPTN,
+                   BCDOPT_PAE, nt_cmdline->pae);
+
+    /* Patch Objects->{Resolution} */
+    if (nt_cmdline->hires == NTARG_BOOL_NA)
+    {
+        bcd_patch_szw (&hive, objects, GUID_OPTN,
+                       BCDOPT_INHERIT, GUID_LRES);
+        bcd_patch_u64 (&hive, objects, GUID_LRES,
+                       BCDOPT_GFXMODE, nt_cmdline->gfxmode);
+    }
     else
-      bcd_parse_bool (hive, BCDOPT_WINPE, "no");
-  }
-  /* disable vesa
-   * default:   no */
-  if (nt_cmdline->novesa[0])
-    bcd_parse_bool (hive, BCDOPT_NOVESA, nt_cmdline->novesa);
-  else
-    bcd_parse_bool (hive, BCDOPT_NOVESA, "no");
-  /* disable vga
-   * default:   no */
-  if (nt_cmdline->novga[0])
-    bcd_parse_bool (hive, BCDOPT_NOVGA, nt_cmdline->novga);
-  else
-    bcd_parse_bool (hive, BCDOPT_NOVGA, "no");
-  /* nx policy
-   * default:   OptIn */
-  if (nt_cmdline->nx[0])
-  {
-    uint64_t nx = 0;
-    if (strcasecmp (nt_cmdline->nx, "OptIn") == 0)
-      nx = NX_OPTIN;
-    else if (strcasecmp (nt_cmdline->nx, "OptOut") == 0)
-      nx = NX_OPTOUT;
-    else if (strcasecmp (nt_cmdline->nx, "AlwaysOff") == 0)
-      nx = NX_ALWAYSOFF;
-    else if (strcasecmp (nt_cmdline->nx, "AlwaysOn") == 0)
-      nx = NX_ALWAYSON;
-    bcd_patch_hive (hive, BCDOPT_NX, &nx);
-  }
-  /* pae
-   * default:   Default */
-  if (nt_cmdline->pae[0])
-  {
-    uint64_t pae = 0;
-    if (strcasecmp (nt_cmdline->pae, "Default") == 0)
-      pae = PAE_DEFAULT;
-    else if (strcasecmp (nt_cmdline->pae, "Enable") == 0)
-      pae = PAE_ENABLE;
-    else if (strcasecmp (nt_cmdline->pae, "Disable") == 0)
-      pae = PAE_DISABLE;
-    bcd_patch_hive (hive, BCDOPT_PAE, &pae);
-  }
-  /* load options
-   * default:   DDISABLE_INTEGRITY_CHECKS */
-  if (nt_cmdline->loadopt[0])
-    bcd_parse_str (hive, BCDOPT_CMDLINE, 0, nt_cmdline->loadopt);
-  else
-    bcd_parse_str (hive, BCDOPT_CMDLINE, 0, BCD_DEFAULT_CMDLINE);
-  /* winload.efi
-   * default:
-   *      OS  - \\Windows\\System32\\winload.efi
-   *      VHD - \\Windows\\System32\\winload.efi
-   *      WIM - \\Windows\\System32\\boot\\winload.efi */
-  if (nt_cmdline->winload[0])
-    bcd_parse_str (hive, BCDOPT_WINLOAD, 0, nt_cmdline->winload);
-  else
-  {
-    if (nt_cmdline->type == BOOT_WIM)
-      bcd_parse_str (hive, BCDOPT_WINLOAD, 0, BCD_LONG_WINLOAD);
-    else
-      bcd_parse_str (hive, BCDOPT_WINLOAD, 0, BCD_SHORT_WINLOAD);
-  }
-  /* windows system root
-   * default:   \\Windows */
-  if (nt_cmdline->sysroot[0])
-    bcd_parse_str (hive, BCDOPT_SYSROOT, 0, nt_cmdline->sysroot);
-  else
-    bcd_parse_str (hive, BCDOPT_SYSROOT, 0, BCD_DEFAULT_SYSROOT);
-  /* windows resume */
-  if (nt_cmdline->type == BOOT_WIN)
-  {
-    bcd_parse_str (hive, BCDOPT_REPATH, 1, BCD_DEFAULT_WINRESUME);
-    bcd_parse_str (hive, BCDOPT_REHIBR, 1, BCD_DEFAULT_HIBERFIL);
-  }
+    {
+        bcd_patch_bool (&hive, objects, GUID_HRES,
+                        BCDOPT_HIGHRES, nt_cmdline->hires);
+    }
 
-  if (efi_systab)
-    bcd_replace_hex (a, 8, b, 8, 0);
-  else
-    bcd_replace_hex (b, 8, a, 8, 0);
+    /* Patch Objects->{SafeBoot} */
+    if (nt_cmdline->safemode)
+    {
+        bcd_patch_u64 (&hive, objects, GUID_SAFE,
+                       BCDOPT_SAFEMODE, nt_cmdline->safeboot);
+        bcd_patch_bool (&hive, objects, GUID_SAFE,
+                        BCDOPT_ALTSHELL, nt_cmdline->altshell);
+    }
+    else
+    {
+        bcd_patch_szw (&hive, objects, entry_guid,
+                       BCDOPT_INHERIT, GUID_OPTN);
+    }
+
+    /* Patch Objects->{Entry} */
+    bcd_patch_dp (&hive, objects, nt_cmdline->boottype,
+                  entry_guid, BCDOPT_APPDEV); // app device
+    bcd_patch_dp (&hive, objects, nt_cmdline->boottype,
+                  entry_guid, BCDOPT_OSDDEV); // os device
+    bcd_patch_sz (&hive, objects, entry_guid,
+                  BCDOPT_WINLOAD, nt_cmdline->winload);
+    bcd_patch_sz (&hive, objects, entry_guid,
+                  BCDOPT_SYSROOT, nt_cmdline->sysroot);
+
+    if (efi_systab)
+        bcd_replace_suffix (L".exe", L".efi");
+    else
+        bcd_replace_suffix (L".efi", L".exe");
 }

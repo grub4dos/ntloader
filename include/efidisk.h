@@ -27,12 +27,12 @@
 
 struct efidisk_data
 {
-  char name[16];
-  EFI_HANDLE handle;
-  EFI_DEVICE_PATH_PROTOCOL *dp;
-  EFI_DEVICE_PATH_PROTOCOL *ldp;
-  EFI_BLOCK_IO_PROTOCOL *bio;
-  struct efidisk_data *next;
+    char name[16];
+    EFI_HANDLE handle;
+    EFI_DEVICE_PATH_PROTOCOL *dp;
+    EFI_DEVICE_PATH_PROTOCOL *ldp;
+    EFI_BLOCK_IO_PROTOCOL *bio;
+    struct efidisk_data *next;
 };
 
 extern void *efi_malloc (size_t size);

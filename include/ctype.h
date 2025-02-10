@@ -29,21 +29,20 @@
 
 static inline int islower (int c)
 {
-  return ((c >= 'a') && (c <= 'z'));
+    return ((c >= 'a') && (c <= 'z'));
 }
 
 static inline int isupper (int c)
 {
-  return ((c >= 'A') && (c <= 'Z'));
+    return ((c >= 'A') && (c <= 'Z'));
 }
 
 static inline int toupper (int c)
 {
-  if (islower (c))
-  {
-    c -= ('a' - 'A');
-  }
-  return c;
+
+    if (islower (c))
+        c -= ('a' - 'A');
+    return c;
 }
 
 extern int isspace (int c);

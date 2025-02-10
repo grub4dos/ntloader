@@ -73,40 +73,39 @@
 #define VDISK_FILE_IDX(lba) (((lba) / VDISK_FILE_COUNT) - 1)
 
 /** File offset (in bytes) from LBA */
-#define VDISK_FILE_OFFSET(lba)          \
-  (((lba) % VDISK_FILE_COUNT) * VDISK_SECTOR_SIZE)
+#define VDISK_FILE_OFFSET(lba)					\
+	(((lba) % VDISK_FILE_COUNT) * VDISK_SECTOR_SIZE)
 
 /** File index from directory entry LBA */
 #define VDISK_FILE_DIRENT_IDX(lba) (((lba) - 1) % VDISK_CLUSTER_COUNT)
 
 /** Number of sectors allocated for FAT */
 #define VDISK_SECTORS_PER_FAT \
-  (((VDISK_CLUSTERS * sizeof (uint32_t) + VDISK_CLUSTER_SIZE - 1) / \
-    VDISK_CLUSTER_SIZE) \
-   * VDISK_CLUSTER_COUNT)
+    (((VDISK_CLUSTERS * sizeof (uint32_t) + \
+      VDISK_CLUSTER_SIZE - 1) / VDISK_CLUSTER_SIZE) * VDISK_CLUSTER_COUNT)
 
 /** Number of reserved sectors */
 #define VDISK_RESERVED_COUNT VDISK_CLUSTER_COUNT
 
 /** Starting cluster number for file */
 #define VDISK_FILE_CLUSTER(idx) \
-  ((((VDISK_FILE_COUNT - VDISK_PARTITION_LBA - \
-      VDISK_RESERVED_COUNT - VDISK_SECTORS_PER_FAT) / \
-     VDISK_CLUSTER_COUNT) + 2) + \
-   ((idx) * VDISK_FILE_CLUSTERS))
+    ((((VDISK_FILE_COUNT - VDISK_PARTITION_LBA - \
+        VDISK_RESERVED_COUNT - VDISK_SECTORS_PER_FAT) \
+      / VDISK_CLUSTER_COUNT) + 2) + \
+      ((idx) * VDISK_FILE_CLUSTERS))
 
 /** Total number of sectors within partition */
 #define VDISK_PARTITION_COUNT \
-  (VDISK_RESERVED_COUNT + VDISK_SECTORS_PER_FAT + \
-   (VDISK_CLUSTERS * VDISK_CLUSTER_COUNT))
+    (VDISK_RESERVED_COUNT + VDISK_SECTORS_PER_FAT + \
+     (VDISK_CLUSTERS * VDISK_CLUSTER_COUNT))
 
 /** Number of sectors */
 #define VDISK_COUNT (VDISK_PARTITION_LBA + VDISK_PARTITION_COUNT)
 
 /** Calculate sector from cluster */
 #define VDISK_CLUSTER_SECTOR(cluster) \
-  ((((cluster) - 2) * VDISK_CLUSTER_COUNT) + \
-   VDISK_RESERVED_COUNT + VDISK_SECTORS_PER_FAT)
+    ((((cluster) - 2) * VDISK_CLUSTER_COUNT) + \
+     VDISK_RESERVED_COUNT + VDISK_SECTORS_PER_FAT)
 
 /*****************************************************************************
  *
@@ -124,33 +123,33 @@
 /** Partition table entry */
 struct vdisk_partition
 {
-  /** Bootable flag */
-  uint8_t bootable;
-  /** C/H/S start address */
-  uint8_t chs_start[3];
-  /** System indicator (partition type) */
-  uint8_t type;
-  /** C/H/S end address */
-  uint8_t chs_end[3];
-  /** Linear start address */
-  uint32_t start;
-  /** Linear length */
-  uint32_t length;
+    /** Bootable flag */
+    uint8_t bootable;
+    /** C/H/S start address */
+    uint8_t chs_start[3];
+    /** System indicator (partition type) */
+    uint8_t type;
+    /** C/H/S end address */
+    uint8_t chs_end[3];
+    /** Linear start address */
+    uint32_t start;
+    /** Linear length */
+    uint32_t length;
 } __attribute__ ((packed));
 
 /** Master Boot Record */
 struct vdisk_mbr
 {
-  /** Code area */
-  uint8_t code[440];
-  /** Disk signature */
-  uint32_t signature;
-  /** Padding */
-  uint8_t pad[2];
-  /** Partition table */
-  struct vdisk_partition partitions[4];
-  /** 0x55aa signature */
-  uint16_t magic;
+    /** Code area */
+    uint8_t code[440];
+    /** Disk signature */
+    uint32_t signature;
+    /** Padding */
+    uint8_t pad[2];
+    /** Partition table */
+    struct vdisk_partition partitions[4];
+    /** 0x55aa signature */
+    uint16_t magic;
 } __attribute__ ((packed));
 
 /** MBR boot partition indiciator */
@@ -181,67 +180,67 @@ struct vdisk_mbr
 /** Volume Boot Record */
 struct vdisk_vbr
 {
-  /** Jump instruction */
-  uint8_t jump[3];
-  /** OEM identifier */
-  char oemid[8];
-  /** Number of bytes per sector */
-  uint16_t bytes_per_sector;
-  /** Number of sectors per cluster */
-  uint8_t sectors_per_cluster;
-  /** Number of reserved sectors */
-  uint16_t reserved_sectors;
-  /** Number of FATs */
-  uint8_t fats;
-  /** Number of root directory entries (FAT12/FAT16 only) */
-  uint16_t root_directory_entries;
-  /** Total number of sectors (0 if more than 65535) */
-  uint16_t sectors_short;
-  /** Media descriptor type */
-  uint8_t media;
-  /** Number of sectors per FAT (FAT12/FAT16 only) */
-  uint16_t sectors_per_fat_short;
-  /** Number of sectors per track */
-  uint16_t sectors_per_track;
-  /** Number of heads */
-  uint16_t heads;
-  /** Number of hidden sectors (i.e. LBA of start of partition) */
-  uint32_t hidden_sectors;
-  /** Total number of sectors */
-  uint32_t sectors;
+    /** Jump instruction */
+    uint8_t jump[3];
+    /** OEM identifier */
+    char oemid[8];
+    /** Number of bytes per sector */
+    uint16_t bytes_per_sector;
+    /** Number of sectors per cluster */
+    uint8_t sectors_per_cluster;
+    /** Number of reserved sectors */
+    uint16_t reserved_sectors;
+    /** Number of FATs */
+    uint8_t fats;
+    /** Number of root directory entries (FAT12/FAT16 only) */
+    uint16_t root_directory_entries;
+    /** Total number of sectors (0 if more than 65535) */
+    uint16_t sectors_short;
+    /** Media descriptor type */
+    uint8_t media;
+    /** Number of sectors per FAT (FAT12/FAT16 only) */
+    uint16_t sectors_per_fat_short;
+    /** Number of sectors per track */
+    uint16_t sectors_per_track;
+    /** Number of heads */
+    uint16_t heads;
+    /** Number of hidden sectors (i.e. LBA of start of partition) */
+    uint32_t hidden_sectors;
+    /** Total number of sectors */
+    uint32_t sectors;
 
-  /* FAT32-specific fields */
+    /* FAT32-specific fields */
 
-  /** Sectors per FAT */
-  uint32_t sectors_per_fat;
-  /** Flags */
-  uint16_t flags;
-  /** FAT version number */
-  uint16_t version;
-  /** Root directory cluster */
-  uint32_t root;
-  /** FSInfo sector */
-  uint16_t fsinfo;
-  /** Backup boot sector */
-  uint16_t backup;
-  /** Reserved */
-  uint8_t reserved[12];
-  /** Drive number */
-  uint8_t drive;
-  /** Windows NT flags */
-  uint8_t nt_flags;
-  /** Signature */
-  uint8_t signature;
-  /** Volume ID serial */
-  uint32_t serial;
-  /** Label (space-padded) */
-  char label[11];
-  /** System identifier */
-  char system[8];
-  /** Boot code */
-  uint8_t code[420];
-  /** 0x55aa signature */
-  uint16_t magic;
+    /** Sectors per FAT */
+    uint32_t sectors_per_fat;
+    /** Flags */
+    uint16_t flags;
+    /** FAT version number */
+    uint16_t version;
+    /** Root directory cluster */
+    uint32_t root;
+    /** FSInfo sector */
+    uint16_t fsinfo;
+    /** Backup boot sector */
+    uint16_t backup;
+    /** Reserved */
+    uint8_t reserved[12];
+    /** Drive number */
+    uint8_t drive;
+    /** Windows NT flags */
+    uint8_t nt_flags;
+    /** Signature */
+    uint8_t signature;
+    /** Volume ID serial */
+    uint32_t serial;
+    /** Label (space-padded) */
+    char label[11];
+    /** System identifier */
+    char system[8];
+    /** Boot code */
+    uint8_t code[420];
+    /** 0x55aa signature */
+    uint16_t magic;
 } __attribute__ ((packed));
 
 /** VBR jump instruction
@@ -253,7 +252,7 @@ struct vdisk_vbr
 #define VDISK_VBR_JUMP_WTF_MS 0xe9
 
 /** VBR OEM ID */
-#define VDISK_VBR_OEMID "winboot\0"
+#define VDISK_VBR_OEMID "wimboot\0"
 
 /** VBR media type */
 #define VDISK_VBR_MEDIA 0xf8
@@ -292,20 +291,20 @@ struct vdisk_vbr
 /** FSInfo */
 struct vdisk_fsinfo
 {
-  /** First signature */
-  uint32_t magic1;
-  /** Reserved */
-  uint8_t reserved_1[480];
-  /** Second signature */
-  uint32_t magic2;
-  /** Free cluster count */
-  uint32_t free_count;
-  /** Next free cluster */
-  uint32_t next_free;
-  /** Reserved */
-  uint8_t reserved_2[12];
-  /** Third signature */
-  uint32_t magic3;
+    /** First signature */
+    uint32_t magic1;
+    /** Reserved */
+    uint8_t reserved_1[480];
+    /** Second signature */
+    uint32_t magic2;
+    /** Free cluster count */
+    uint32_t free_count;
+    /** Next free cluster */
+    uint32_t next_free;
+    /** Reserved */
+    uint8_t reserved_2[12];
+    /** Third signature */
+    uint32_t magic3;
 } __attribute__ ((packed));
 
 /** FSInfo first signature */
@@ -365,73 +364,73 @@ struct vdisk_fsinfo
 /** An 8.3 filename record */
 struct vdisk_short_filename
 {
-  /** Filename */
-  union
-  {
-    /** Structured 8.3 base name and extension */
-    struct
+    /** Filename */
+    union
     {
-      /** Base name */
-      char base[8];
-      /** Extension */
-      char ext[3];
-    } __attribute__ ((packed));
-    /** Raw bytes */
-    uint8_t raw[11];
-  } filename;
-  /** Attributes */
-  uint8_t attr;
-  /** Reserved */
-  uint8_t reserved;
-  /** Creation time in tenths of a second */
-  uint8_t created_deciseconds;
-  /** Creation time (HMS packed) */
-  uint16_t created_time;
-  /** Creation date (YMD packed) */
-  uint16_t created_date;
-  /** Last accessed date (YMD packed) */
-  uint16_t accessed_date;
-  /** High 16 bits of starting cluster number */
-  uint16_t cluster_high;
-  /** Modification time (HMS packed) */
-  uint16_t modified_time;
-  /** Modification date (YMD packed) */
-  uint16_t modified_date;
-  /** Low 16 bits of starting cluster number */
-  uint16_t cluster_low;
-  /** Size */
-  uint32_t size;
+        /** Structured 8.3 base name and extension */
+        struct
+        {
+            /** Base name */
+            char base[8];
+            /** Extension */
+            char ext[3];
+        } __attribute__ ((packed));
+        /** Raw bytes */
+        uint8_t raw[11];
+    } filename;
+    /** Attributes */
+    uint8_t attr;
+    /** Reserved */
+    uint8_t reserved;
+    /** Creation time in tenths of a second */
+    uint8_t created_deciseconds;
+    /** Creation time (HMS packed) */
+    uint16_t created_time;
+    /** Creation date (YMD packed) */
+    uint16_t created_date;
+    /** Last accessed date (YMD packed) */
+    uint16_t accessed_date;
+    /** High 16 bits of starting cluster number */
+    uint16_t cluster_high;
+    /** Modification time (HMS packed) */
+    uint16_t modified_time;
+    /** Modification date (YMD packed) */
+    uint16_t modified_date;
+    /** Low 16 bits of starting cluster number */
+    uint16_t cluster_low;
+    /** Size */
+    uint32_t size;
 } __attribute__ ((packed));
 
 /** A long filename record */
 struct vdisk_long_filename
 {
-  /** Sequence number */
-  uint8_t sequence;
-  /** Name characters */
-  uint16_t name_1[5];
-  /** Attributes */
-  uint8_t attr;
-  /** Type */
-  uint8_t type;
-  /** Checksum of 8.3 name */
-  uint8_t checksum;
-  /** Name characters */
-  uint16_t name_2[6];
-  /** Reserved */
-  uint16_t reserved;
-  /** Name characters */
-  uint16_t name_3[2];
+    /** Sequence number */
+    uint8_t sequence;
+    /** Name characters */
+    uint16_t name_1[5];
+    /** Attributes */
+    uint8_t attr;
+    /** Type */
+    uint8_t type;
+    /** Checksum of 8.3 name */
+    uint8_t checksum;
+    /** Name characters */
+    uint16_t name_2[6];
+    /** Reserved */
+    uint16_t reserved;
+    /** Name characters */
+    uint16_t name_3[2];
 } __attribute__ ((packed));
 
 /** Directory entry attributes */
 enum vdisk_directory_entry_attributes
 {
-  VDISK_READ_ONLY = 0x01,
-  VDISK_HIDDEN = 0x02,
-  VDISK_SYSTEM = 0x04,
-  VDISK_VOLUME_LABEL = 0x08,
-  VDISK_DIRECTORY = 0x10,
+    VDISK_READ_ONLY = 0x01,
+    VDISK_HIDDEN = 0x02,
+    VDISK_SYSTEM = 0x04,
+    VDISK_VOLUME_LABEL = 0x08,
+    VDISK_DIRECTORY = 0x10,
 };
 
 /** Long filename end-of-sequence marker */
@@ -439,31 +438,32 @@ enum vdisk_directory_entry_attributes
 
 /** Long filename attributes */
 #define VDISK_LFN_ATTR \
-  (VDISK_READ_ONLY | VDISK_HIDDEN | VDISK_SYSTEM | VDISK_VOLUME_LABEL)
+    (VDISK_READ_ONLY | VDISK_HIDDEN | VDISK_SYSTEM | VDISK_VOLUME_LABEL)
 
 /** A directory entry */
 union vdisk_directory_entry
 {
-  /** Deleted file marker */
-  uint8_t deleted;
-  /** 8.3 filename */
-  struct vdisk_short_filename dos;
-  /** Long filename */
-  struct vdisk_long_filename lfn;
+    /** Deleted file marker */
+    uint8_t deleted;
+    /** 8.3 filename */
+    struct vdisk_short_filename dos;
+    /** Long filename */
+    struct vdisk_long_filename lfn;
 } __attribute__ ((packed));
 
 /** Magic marker for deleted files */
 #define VDISK_DIRENT_DELETED 0xe5
 
 /** Number of directory entries per sector */
-#define VDISK_DIRENT_PER_SECTOR \
-  (VDISK_SECTOR_SIZE / sizeof (union vdisk_directory_entry))
+#define VDISK_DIRENT_PER_SECTOR					\
+	(VDISK_SECTOR_SIZE /					\
+	  sizeof (union vdisk_directory_entry))
 
 /** A directory sector */
 struct vdisk_directory
 {
-  /** Entries */
-  union vdisk_directory_entry entry[VDISK_DIRENT_PER_SECTOR];
+    /** Entries */
+    union vdisk_directory_entry entry[VDISK_DIRENT_PER_SECTOR];
 } __attribute__ ((packed));
 
 /*****************************************************************************
@@ -591,46 +591,45 @@ struct vdisk_directory
 /** A virtual file */
 struct vdisk_file
 {
-  /** Filename */
-  char name[ VDISK_NAME_LEN + 1 /* NUL */ ];
-  /** Opaque token */
-  void *opaque;
-  /** Length (excluding any zero-padding) */
-  size_t len;
-  /** Length (including any zero-padding) */
-  size_t xlen;
-  /** Read data
-   *
-   * @v file    Virtual file
-   * @v data    Data buffer
-   * @v offset    Starting offset
-   * @v len   Length
-   */
-  void (* read) (struct vdisk_file *file, void *data, size_t offset,
-                 size_t len);
-  /** Patch data (optional)
-   *
-   * @v file    Virtual file
-   * @v data    Data buffer
-   * @v offset    Starting offset
-   * @v len   Length
-   */
-  void (* patch) (struct vdisk_file *file, void *data, size_t offset, size_t len);
+    /** Filename */
+    char name[ VDISK_NAME_LEN + 1 /* NUL */ ];
+    /** Opaque token */
+    void *opaque;
+    /** Length (excluding any zero-padding) */
+    size_t len;
+    /** Length (including any zero-padding) */
+    size_t xlen;
+    /** Read data
+     *
+     * @v file		Virtual file
+     * @v data		Data buffer
+     * @v offset		Starting offset
+     * @v len		Length
+     */
+    void (* read) (struct vdisk_file *file, void *data, size_t offset,
+                      size_t len);
+    /** Patch data (optional)
+     *
+     * @v file		Virtual file
+     * @v data		Data buffer
+     * @v offset		Starting offset
+     * @v len		Length
+     */
+    void (* patch) (struct vdisk_file *file, void *data, size_t offset,
+                       size_t len);
 };
 
 extern struct vdisk_file vdisk_files[VDISK_MAX_FILES];
 
 extern void vdisk_read (uint64_t lba, unsigned int count, void *data);
+
 extern struct vdisk_file *
 vdisk_add_file (const char *name, void *opaque, size_t len,
-                void (* read) (struct vdisk_file *file, void *data,
-                               size_t offset, size_t len));
-
-extern void read_mem_file (struct vdisk_file *file, void *data, size_t offset, size_t len);
-
+                 void (* read) (struct vdisk_file *file, void *data,
+                                   size_t offset, size_t len));
 extern void
 vdisk_patch_file (struct vdisk_file *file,
-                  void (* patch) (struct vdisk_file *file, void *data,
-                                  size_t offset, size_t len));
+                   void (* patch) (struct vdisk_file *file, void *data,
+                                      size_t offset, size_t len));
 
 #endif /* _VDISK_H */

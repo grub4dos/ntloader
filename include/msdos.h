@@ -61,76 +61,76 @@
 /* The partition entry.  */
 struct msdos_part_entry
 {
-  /* If active, 0x80, otherwise, 0x00.  */
-  uint8_t flag;
+    /* If active, 0x80, otherwise, 0x00.  */
+    uint8_t flag;
 
-  /* The head of the start.  */
-  uint8_t start_head;
+    /* The head of the start.  */
+    uint8_t start_head;
 
-  /* (S | ((C >> 2) & 0xC0)) where S is the sector of the start and C
-     is the cylinder of the start. Note that S is counted from one.  */
-  uint8_t start_sector;
+    /* (S | ((C >> 2) & 0xC0)) where S is the sector of the start and C
+     *     is the cylinder of the start. Note that S is counted from one.  */
+    uint8_t start_sector;
 
-  /* (C & 0xFF) where C is the cylinder of the start.  */
-  uint8_t start_cylinder;
+    /* (C & 0xFF) where C is the cylinder of the start.  */
+    uint8_t start_cylinder;
 
-  /* The partition type.  */
-  uint8_t type;
+    /* The partition type.  */
+    uint8_t type;
 
-  /* The end versions of start_head, start_sector and start_cylinder,
-     respectively.  */
-  uint8_t end_head;
-  uint8_t end_sector;
-  uint8_t end_cylinder;
+    /* The end versions of start_head, start_sector and start_cylinder,
+     *     respectively.  */
+    uint8_t end_head;
+    uint8_t end_sector;
+    uint8_t end_cylinder;
 
-  /* The start sector. Note that this is counted from zero.  */
-  uint32_t start;
+    /* The start sector. Note that this is counted from zero.  */
+    uint32_t start;
 
-  /* The length in sector units.  */
-  uint32_t length;
+    /* The length in sector units.  */
+    uint32_t length;
 } __attribute__ ((packed));
 
 /* The structure of MBR.  */
 struct msdos_part_mbr
 {
-  char dummy1[11];/* normally there is a short JMP instuction(opcode is 0xEB) */
-  uint16_t bytes_per_sector;/* seems always to be 512, so we just use 512 */
-  uint8_t sectors_per_cluster;/* non-zero, the power of 2, i.e., 2^n */
-  uint16_t reserved_sectors;/* FAT=non-zero, NTFS=0? */
-  uint8_t number_of_fats;/* NTFS=0; FAT=1 or 2  */
-  uint16_t root_dir_entries;/* FAT32=0, NTFS=0, FAT12/16=non-zero */
-  uint16_t total_sectors_short;/* FAT32=0, NTFS=0, FAT12/16=any */
-  uint8_t media_descriptor;/* range from 0xf0 to 0xff */
-  uint16_t sectors_per_fat;/* FAT32=0, NTFS=0, FAT12/16=non-zero */
-  uint16_t sectors_per_track;/* range from 1 to 63 */
-  uint16_t total_heads;/* range from 1 to 256 */
-  uint32_t hidden_sectors;/* any value */
-  uint32_t total_sectors_long;/* FAT32=non-zero, NTFS=0, FAT12/16=any */
-  uint32_t sectors_per_fat32;/* FAT32=non-zero, NTFS=any, FAT12/16=any */
-  uint64_t total_sectors_long_long;/* NTFS=non-zero, FAT12/16/32=any */
-  char dummy2[392];
-  uint32_t unique_signature;
-  uint8_t unknown[2];
+    char dummy1[11];/* normally there is a short JMP instuction(opcode is 0xEB) */
+    uint16_t bytes_per_sector;/* seems always to be 512, so we just use 512 */
+    uint8_t sectors_per_cluster;/* non-zero, the power of 2, i.e., 2^n */
+    uint16_t reserved_sectors;/* FAT=non-zero, NTFS=0? */
+    uint8_t number_of_fats;/* NTFS=0; FAT=1 or 2  */
+    uint16_t root_dir_entries;/* FAT32=0, NTFS=0, FAT12/16=non-zero */
+    uint16_t total_sectors_short;/* FAT32=0, NTFS=0, FAT12/16=any */
+    uint8_t media_descriptor;/* range from 0xf0 to 0xff */
+    uint16_t sectors_per_fat;/* FAT32=0, NTFS=0, FAT12/16=non-zero */
+    uint16_t sectors_per_track;/* range from 1 to 63 */
+    uint16_t total_heads;/* range from 1 to 256 */
+    uint32_t hidden_sectors;/* any value */
+    uint32_t total_sectors_long;/* FAT32=non-zero, NTFS=0, FAT12/16=any */
+    uint32_t sectors_per_fat32;/* FAT32=non-zero, NTFS=any, FAT12/16=any */
+    uint64_t total_sectors_long_long;/* NTFS=non-zero, FAT12/16/32=any */
+    char dummy2[392];
+    uint32_t unique_signature;
+    uint8_t unknown[2];
 
-  /* Four partition entries.  */
-  struct msdos_part_entry entries[4];
+    /* Four partition entries.  */
+    struct msdos_part_entry entries[4];
 
-  /* The signature 0xaa55.  */
-  uint16_t signature;
+    /* The signature 0xaa55.  */
+    uint16_t signature;
 } __attribute__ ((packed));
 
 static inline int
 msdos_part_is_empty (int type)
 {
-  return (type == MSDOS_PART_TYPE_NONE);
+    return (type == MSDOS_PART_TYPE_NONE);
 }
 
 static inline int
 msdos_part_is_extended (int type)
 {
-  return (type == MSDOS_PART_TYPE_EXTENDED ||
-          type == MSDOS_PART_TYPE_WIN95_EXTENDED ||
-          type == MSDOS_PART_TYPE_LINUX_EXTENDED);
+    return (type == MSDOS_PART_TYPE_EXTENDED ||
+    type == MSDOS_PART_TYPE_WIN95_EXTENDED ||
+    type == MSDOS_PART_TYPE_LINUX_EXTENDED);
 }
 
 extern int
@@ -138,32 +138,27 @@ check_msdos_partmap (void *disk,
                      int (*disk_read) (void *disk, uint64_t sector,
                                        size_t len, void *buf));
 
-/* Convert a LBA address to a CHS address in the INT 13 format.  */
-/* Taken from grub1. */
-/* XXX: use hardcoded geometry of C = 1024, H = 255, S = 63.
-   Is it a problem?
-*/
 static inline void
 lba_to_chs (uint32_t lba, uint8_t *cl, uint8_t *ch,
             uint8_t *dh)
 {
-  uint32_t cylinder, head, sector;
-  uint32_t sectors = 63, heads = 255, cylinders = 1024;
+    uint32_t cylinder, head, sector;
+    uint32_t sectors = 63, heads = 255, cylinders = 1024;
 
-  sector = lba % sectors + 1;
-  head = (lba / sectors) % heads;
-  cylinder = lba / (sectors * heads);
+    sector = lba % sectors + 1;
+    head = (lba / sectors) % heads;
+    cylinder = lba / (sectors * heads);
 
-  if (cylinder >= cylinders)
-  {
-    *cl = *ch = 0xff;
-    *dh = 0xfe;
-    return;
-  }
+    if (cylinder >= cylinders)
+    {
+        *cl = *ch = 0xff;
+        *dh = 0xfe;
+        return;
+    }
 
-  *cl = sector | ((cylinder & 0x300) >> 2);
-  *ch = cylinder & 0xFF;
-  *dh = head;
+    *cl = sector | ((cylinder & 0x300) >> 2);
+    *ch = cylinder & 0xFF;
+    *dh = head;
 }
 
 #endif /* ! MSDOS_PART_HEADER */

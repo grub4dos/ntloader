@@ -17,74 +17,90 @@
  * 02110-1301, USA.
  */
 
+/**
+ * @file
+ *
+ * Standard Input/Output
+ *
+ */
+
 #include <stdio.h>
 #include <string.h>
-#include <bootapp.h>
-#include <ntboot.h>
-#include <efi.h>
+#include "bootapp.h"
+#include "ntloader.h"
+#include "efi.h"
 
 /**
  * Print character to console
  *
- * @v character   Character to print
+ * @v character		Character to print
  */
 int putchar (int character)
 {
-  EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
-  struct bootapp_callback_params params;
-  wchar_t wbuf[2];
-  /* Convert LF to CR,LF */
-  if (character == '\n')
-  {
-    putchar ('\r');
-  }
-  /* Print character to EFI/BIOS console as applicable */
-  if (efi_systab)
-  {
-    conout = efi_systab->ConOut;
-    wbuf[0] = character;
-    wbuf[1] = 0;
-    conout->OutputString (conout, wbuf);
-  }
-  else
-  {
-    memset (&params, 0, sizeof (params));
-    params.vector.interrupt = 0x10;
-    params.eax = (0x0e00 | character);
-    params.ebx = 0x0007;
-    call_interrupt (&params);
-  }
-  return 0;
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
+    struct bootapp_callback_params params;
+    wchar_t wbuf[2];
+
+    /* Convert LF to CR,LF */
+    if (character == '\n')
+        putchar ('\r');
+
+    /* Print character to bochs debug port */
+#if defined(__i386__) || defined(__x86_64__)
+    __asm__ __volatile__ ("outb %b0, $0xe9"
+                           : : "a" (character));
+#endif
+
+    /* Print character to EFI/BIOS console as applicable */
+    if (efi_systab)
+    {
+        conout = efi_systab->ConOut;
+        wbuf[0] = character;
+        wbuf[1] = 0;
+        conout->OutputString (conout, wbuf);
+    }
+    else
+    {
+        memset (&params, 0, sizeof (params));
+        params.vector.interrupt = 0x10;
+        params.eax = (0x0e00 | character);
+        params.ebx = 0x0007;
+        call_interrupt (&params);
+    }
+
+    return 0;
 }
 
 /**
  * Get character from console
  *
- * @ret character Character
+ * @ret character	Character
  */
 int getchar (void)
 {
-  EFI_BOOT_SERVICES *bs;
-  EFI_SIMPLE_TEXT_INPUT_PROTOCOL *conin;
-  EFI_INPUT_KEY key;
-  UINTN index;
-  struct bootapp_callback_params params;
-  int character;
-  /* Get character */
-  if (efi_systab)
-  {
-    bs = efi_systab->BootServices;
-    conin = efi_systab->ConIn;
-    bs->WaitForEvent (1, &conin->WaitForKey, &index);
-    conin->ReadKeyStroke (conin, &key);
-    character = key.UnicodeChar;
-  }
-  else
-  {
-    memset (&params, 0, sizeof (params));
-    params.vector.interrupt = 0x16;
-    call_interrupt (&params);
-    character = params.al;
-  }
-  return character;
+    EFI_BOOT_SERVICES *bs;
+    EFI_SIMPLE_TEXT_INPUT_PROTOCOL *conin;
+    EFI_INPUT_KEY key;
+    UINTN index;
+    struct bootapp_callback_params params;
+    int character;
+
+    /* Get character */
+    if (efi_systab)
+    {
+        bs = efi_systab->BootServices;
+        conin = efi_systab->ConIn;
+        bs->WaitForEvent (1, &conin->WaitForKey, &index);
+        conin->ReadKeyStroke (conin, &key);
+        character = key.UnicodeChar;
+    }
+    else
+    {
+        memset (&params, 0, sizeof (params));
+        params.vector.interrupt = 0x16;
+        call_interrupt (&params);
+        character = params.al;
+    }
+
+    return character;
 }

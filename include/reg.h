@@ -1,5 +1,4 @@
-/*
- * Copyright (c) Mark Harmstone 2020
+/* Copyright (c) Mark Harmstone 2020
  *
  * This file is part of Quibble.
  *
@@ -9,42 +8,27 @@
  * (at your option) any later version.
  *
  * Quibble is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * but WITHANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public Licence for more details.
  *
  * You should have received a copy of the GNU Lesser General Public Licence
- * along with Quibble.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * along with Quibble.  If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef _WINREG_HEADER
-#define _WINREG_HEADER 1
+#ifndef _REG_HEADER
+#define _REG_HEADER 1
 
 #include <stdint.h>
 
-typedef uint32_t HKEY;
-
-#define REG_NONE                        0x00000000
-#define REG_SZ                          0x00000001
-#define REG_EXPAND_SZ                   0x00000002
-#define REG_BINARY                      0x00000003
-#define REG_DWORD                       0x00000004
-#define REG_DWORD_BIG_ENDIAN            0x00000005
-#define REG_LINK                        0x00000006
-#define REG_MULTI_SZ                    0x00000007
-#define REG_RESOURCE_LIST               0x00000008
-#define REG_FULL_RESOURCE_DESCRIPTOR    0x00000009
-#define REG_RESOURCE_REQUIREMENTS_LIST  0x0000000a
-#define REG_QWORD                       0x0000000b
-
 #define HV_HBLOCK_SIGNATURE 0x66676572  // "regf"
+#define HV_HBIN_SIGNATURE   0x6e696268  // "hbin"
 
 #define HSYS_MAJOR 1
 #define HSYS_MINOR 3
 #define HFILE_TYPE_PRIMARY 0
 #define HBASE_FORMAT_MEMORY 1
 
-#define CM_KEY_LEAF             0x666c  // "lf"
+#define CM_KEY_FAST_LEAF        0x666c  // "lf"
 #define CM_KEY_HASH_LEAF        0x686c  // "lh"
 #define CM_KEY_INDEX_ROOT       0x6972  // "ri"
 #define CM_KEY_NODE_SIGNATURE   0x6b6e  // "nk"
@@ -70,122 +54,144 @@ typedef uint32_t HKEY;
 
 typedef struct
 {
-  uint32_t Signature;
-  uint32_t Sequence1;
-  uint32_t Sequence2;
-  uint64_t TimeStamp;
-  uint32_t Major;
-  uint32_t Minor;
-  uint32_t Type;
-  uint32_t Format;
-  uint32_t RootCell;
-  uint32_t Length;
-  uint32_t Cluster;
-  uint16_t FileName[HIVE_FILENAME_MAXLEN + 1];
-  uint32_t Reserved1[99];
-  uint32_t CheckSum;
-  uint32_t Reserved2[0x37E];
-  uint32_t BootType;
-  uint32_t BootRecover;
+    uint32_t Signature;
+    uint32_t Sequence1;
+    uint32_t Sequence2;
+    uint64_t TimeStamp;
+    uint32_t Major;
+    uint32_t Minor;
+    uint32_t Type;
+    uint32_t Format;
+    uint32_t RootCell;
+    uint32_t Length;
+    uint32_t Cluster;
+    wchar_t FileName[HIVE_FILENAME_MAXLEN + 1];
+    uint32_t Reserved1[99];
+    uint32_t CheckSum;
+    uint32_t Reserved2[0x37E];
+    uint32_t BootType;
+    uint32_t BootRecover;
 } __attribute__ ((packed)) HBASE_BLOCK;
 
 typedef struct
 {
-  uint16_t Signature;
-  uint16_t Flags;
-  uint64_t LastWriteTime;
-  uint32_t Spare;
-  uint32_t Parent;
-  uint32_t SubKeyCount;
-  uint32_t VolatileSubKeyCount;
-  uint32_t SubKeyList;
-  uint32_t VolatileSubKeyList;
-  uint32_t ValuesCount;
-  uint32_t Values;
-  uint32_t Security;
-  uint32_t Class;
-  uint32_t MaxNameLen;
-  uint32_t MaxClassLen;
-  uint32_t MaxValueNameLen;
-  uint32_t MaxValueDataLen;
-  uint32_t WorkVar;
-  uint16_t NameLength;
-  uint16_t ClassLength;
-  uint16_t Name[1];
+    uint32_t Signature;
+    uint32_t FileOffset;
+    uint32_t Size;
+    uint32_t Reserved[2];
+    uint64_t TimeStamp;
+    uint32_t Spare;
+} __attribute__ ((packed)) HBIN;
+
+typedef struct
+{
+    uint16_t Signature;
+    uint16_t Flags;
+    uint64_t LastWriteTime;
+    uint32_t Spare;
+    uint32_t Parent;
+    uint32_t SubKeyCount;
+    uint32_t VolatileSubKeyCount;
+    uint32_t SubKeyList;
+    uint32_t VolatileSubKeyList;
+    uint32_t ValuesCount;
+    uint32_t Values;
+    uint32_t Security;
+    uint32_t Class;
+    uint32_t MaxNameLen;
+    uint32_t MaxClassLen;
+    uint32_t MaxValueNameLen;
+    uint32_t MaxValueDataLen;
+    uint32_t WorkVar;
+    uint16_t NameLength;
+    uint16_t ClassLength;
+    wchar_t Name[1];
 } __attribute__ ((packed)) CM_KEY_NODE;
 
 typedef struct
 {
-  uint32_t Cell;
-  uint32_t HashKey;
+    uint32_t Cell;
+    uint32_t HashKey;
 } __attribute__ ((packed)) CM_INDEX;
 
 typedef struct
 {
-  uint16_t Signature;
-  uint16_t Count;
-  CM_INDEX List[1];
+    uint16_t Signature;
+    uint16_t Count;
+    CM_INDEX List[1];
 } __attribute__ ((packed)) CM_KEY_FAST_INDEX;
 
 typedef struct
 {
-  uint16_t Signature;
-  uint16_t NameLength;
-  uint32_t DataLength;
-  uint32_t Data;
-  uint32_t Type;
-  uint16_t Flags;
-  uint16_t Spare;
-  uint16_t Name[1];
+    uint16_t Signature;
+    uint16_t NameLength;
+    uint32_t DataLength;
+    uint32_t Data;
+    uint32_t Type;
+    uint16_t Flags;
+    uint16_t Spare;
+    wchar_t Name[1];
 } __attribute__ ((packed)) CM_KEY_VALUE;
 
 typedef struct
 {
-  uint16_t Signature;
-  uint16_t Count;
-  uint32_t List[1];
+    uint16_t Signature;
+    uint16_t Count;
+    uint32_t List[1];
 } __attribute__ ((packed)) CM_KEY_INDEX;
+
+#define REG_NONE                        0x00000000
+#define REG_SZ                          0x00000001
+#define REG_EXPAND_SZ                   0x00000002
+#define REG_BINARY                      0x00000003
+#define REG_DWORD                       0x00000004
+#define REG_DWORD_BIG_ENDIAN            0x00000005
+#define REG_LINK                        0x00000006
+#define REG_MULTI_SZ                    0x00000007
+#define REG_RESOURCE_LIST               0x00000008
+#define REG_FULL_RESOURCE_DESCRIPTOR    0x00000009
+#define REG_RESOURCE_REQUIREMENTS_LIST  0x0000000a
+#define REG_QWORD                       0x0000000b
 
 typedef enum
 {
-  REG_ERR_NONE = 0,
-  REG_ERR_OUT_OF_MEMORY,
-  REG_ERR_BAD_FILE_TYPE,
-  REG_ERR_FILE_NOT_FOUND,
-  REG_ERR_FILE_READ_ERROR,
-  REG_ERR_BAD_FILENAME,
-  REG_ERR_BAD_ARGUMENT,
-  REG_ERR_BAD_SIGNATURE,
+    REG_ERR_NONE = 0,
+    REG_ERR_OUT_OF_MEMORY,
+    REG_ERR_BAD_FILE_TYPE,
+    REG_ERR_FILE_NOT_FOUND,
+    REG_ERR_FILE_READ_ERROR,
+    REG_ERR_BAD_FILENAME,
+    REG_ERR_BAD_ARGUMENT,
+    REG_ERR_BAD_SIGNATURE,
 } reg_err_t;
 
-typedef struct reg_hive
-{
-  void (*close) (struct reg_hive *this);
-  void (*find_root) (struct reg_hive *this, HKEY *key);
-  reg_err_t (*enum_keys) (struct reg_hive *this, HKEY key,
-                           uint32_t index, uint16_t *name, uint32_t name_len);
-  reg_err_t (*find_key) (struct reg_hive *this, HKEY parent,
-                          const uint16_t *path, HKEY *key);
-  reg_err_t (*enum_values) (struct reg_hive *this, HKEY key,
-                             uint32_t index, uint16_t *name, uint32_t name_len,
-                             uint32_t *type);
-  reg_err_t (*query_value) (struct reg_hive *this, HKEY key,
-                             const uint16_t *name,
-                             void *data, uint32_t *data_len, uint32_t *type);
-  void (*steal_data) (struct reg_hive *this,
-                      void **data, uint32_t *size);
-  reg_err_t (*query_value_no_copy) (struct reg_hive *this, HKEY key,
-                                     const uint16_t *name, void **data,
-                                     uint32_t *data_len, uint32_t *type);
-} reg_hive_t;
+typedef uint32_t HKEY;
 
 typedef struct
 {
-  reg_hive_t public;
-  size_t size;
-  void* data;
+    size_t size;
+    void *data;
 } hive_t;
 
-reg_err_t open_hive (void *file, size_t len, reg_hive_t ** hive);
+void reg_find_root(hive_t *h, HKEY *Key);
+
+reg_err_t
+reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
+              wchar_t *Name, uint32_t NameLength);
+
+reg_err_t
+reg_find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key);
+
+reg_err_t
+reg_enum_values(hive_t *h, HKEY Key,
+                uint32_t Index, wchar_t *Name,
+                uint32_t NameLength, uint32_t *Type);
+
+reg_err_t
+reg_query_value(hive_t *h, HKEY Key,
+                const wchar_t *Name, void **Data,
+                uint32_t *DataLength, uint32_t *Type);
+
+reg_err_t reg_open_hive(hive_t *h);
 
 #endif

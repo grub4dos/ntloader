@@ -35,14 +35,14 @@
 /** An INT 15,e820 memory map entry */
 struct e820_entry
 {
-  /** Start of region */
-  uint64_t start;
-  /** Length of region */
-  uint64_t len;
-  /** Type of region */
-  uint32_t type;
-  /** Extended attributes (optional) */
-  uint32_t attrs;
+    /** Start of region */
+    uint64_t start;
+    /** Length of region */
+    uint64_t len;
+    /** Type of region */
+    uint32_t type;
+    /** Extended attributes (optional) */
+    uint32_t attrs;
 } __attribute__ ((packed));
 
 /** Normal RAM */

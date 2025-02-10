@@ -36,22 +36,22 @@
 
 static inline int iswlower (wint_t c)
 {
-  return islower (c);
+    return islower (c);
 }
 
 static inline int iswupper (wint_t c)
 {
-  return isupper (c);
+    return isupper (c);
 }
 
 static inline int towupper (wint_t c)
 {
-  return toupper (c);
+    return toupper (c);
 }
 
 static inline int iswspace (wint_t c)
 {
-  return isspace (c);
+    return isspace (c);
 }
 
 #endif /* _WCTYPE_H */

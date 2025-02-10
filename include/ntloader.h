@@ -1,6 +1,8 @@
+#ifndef _NTLOADER_H
+#define _NTLOADER_H
+
 /*
- * ntloader  --  Microsoft Windows NT6+ loader
- * Copyright (C) 2023  A1ive.
+ * Copyright (C) 2012 Michael Brown <mbrown@fensystems.co.uk>.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,17 +20,22 @@
  * 02110-1301, USA.
  */
 
-#ifndef _NTBOOT_H
-#define _NTBOOT_H
+/**
+ * @file
+ *
+ * NT loader
+ *
+ */
 
 /** Debug switch */
 #ifndef DEBUG
-  #define DEBUG 1
+#define DEBUG 1
 #endif
 
 /** Base segment address
  *
- * We place everything at 4000:0000.
+ * We place everything at 2000:0000, since this region is used by the
+ * Microsoft first-stage loaders (e.g. pxeboot.n12, etfsboot.com).
  */
 #define BASE_SEG 0x2000
 
@@ -54,7 +61,6 @@
 
 #include <stdint.h>
 #include <bootapp.h>
-#include <cmdline.h>
 
 /** Construct wide-character version of a string constant */
 #define L(x) _L (x)
@@ -66,97 +72,101 @@
 #define BYTES_TO_PAGES(bytes)   (((bytes) + 0xfff) >> 12)
 #define PAGES_TO_BYTES(pages)   ((pages) << 12)
 
+/** Calculating log base 2 of 64-bit integers */
+#define SECTOR_LOG2ULL(n, s) \
+    for (n = 0; (1U << n) < s; n++);
+
 /**
  * Calculate start page number
  *
- * @v address   Address
- * @ret page    Start page number
+ * @v address		Address
+ * @ret page		Start page number
  */
 static inline unsigned int page_start (const void *address)
 {
-  return (((intptr_t) address) / PAGE_SIZE);
+    return (((intptr_t) address) / PAGE_SIZE);
 }
 
 /**
  * Calculate end page number
  *
- * @v address   Address
- * @ret page    End page number
+ * @v address		Address
+ * @ret page		End page number
  */
 static inline unsigned int page_end (const void *address)
 {
-  return ((((intptr_t) address) + PAGE_SIZE - 1) / PAGE_SIZE);
+    return ((((intptr_t) address) + PAGE_SIZE - 1) / PAGE_SIZE);
 }
 
 /**
  * Calculate page length
  *
- * @v start   Start address
- * @v end   End address
- * @ret num_pages Number of pages
+ * @v start		Start address
+ * @v end		End address
+ * @ret num_pages	Number of pages
  */
 static inline unsigned int page_len (const void *start, const void *end)
 {
-  return (page_end (end) - page_start (start));
+    return (page_end (end) - page_start (start));
+}
+
+/**
+ * Bochs magic breakpoint
+ *
+ */
+static inline void bochsbp (void)
+{
+    __asm__ __volatile__ ("xchgw %bx, %bx");
 }
 
 /** Debugging output */
 #define DBG(...) \
-  do \
-  { \
-    if ((DEBUG & 1) && !(nt_cmdline->flag & NT_FLAG_QUIET)) \
+do \
+{ \
+    if (DEBUG & 1) \
     { \
-      printf (__VA_ARGS__); \
+        printf (__VA_ARGS__); \
     } \
-  } while (0)
+} while (0)
 
 /** Verbose debugging output */
 #define DBG2(...) \
-  do \
-  { \
-    if ((DEBUG & 2) && !(nt_cmdline->flag & NT_FLAG_QUIET)) \
+do \
+{ \
+    if (DEBUG & 2) \
     { \
-      printf (__VA_ARGS__); \
+        printf (__VA_ARGS__); \
     } \
-  } while (0)
+} while (0)
 
 /* Branch prediction macros */
-#define likely( x ) __builtin_expect (!! (x), 1)
-#define unlikely( x ) __builtin_expect ((x), 0)
+#define likely(x) __builtin_expect (!! (x), 1)
+#define unlikely(x) __builtin_expect ((x), 0)
 
-/* Mark parameter as unused */
-#define __unused __attribute__ ((unused))
-
-#if __x86_64__
-static inline void call_real (struct bootapp_callback_params *params)
-{
-  /* Not available in 64-bit mode */
-  (void) params;
-}
-static inline void call_interrupt (struct bootapp_callback_params *params)
-{
-  /* Not available in 64-bit mode */
-  (void) params;
-}
-static inline void reboot (void)
-{
-  /* Not available in 64-bit mode */
-}
-#else
+#ifdef __i386__
 extern void call_real (struct bootapp_callback_params *params);
 extern void call_interrupt (struct bootapp_callback_params *params);
 extern void __attribute__ ((noreturn)) reboot (void);
+#else
+static inline void call_real (struct bootapp_callback_params *params)
+{
+    (void) params;
+}
+static inline void call_interrupt (struct bootapp_callback_params *params)
+{
+    (void) params;
+}
+static inline void reboot (void)
+{
+}
 #endif
 
 extern void __attribute__ ((noreturn, format (printf, 1, 2)))
 die (const char *fmt, ...);
-extern void pause_boot (void);
-extern void print_banner (void);
-extern void cls (void);
 
 extern unsigned long __stack_chk_guard;
 extern void init_cookie (void);
 
 #endif /* ASSEMBLY */
 
-#endif /* _WIMBOOT_H */
+#endif /* _NTLOADER_H */

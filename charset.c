@@ -32,37 +32,37 @@ uint16_t *
 utf8_to_ucs2 (uint16_t *dest, size_t destsize,
               const uint8_t *src)
 {
-  size_t i;
-  for (i = 0; src[0] && i < destsize; i++)
-  {
-    if (src[0] <= 0x7F)
+    size_t i;
+    for (i = 0; src[0] && i < destsize; i++)
     {
-      *dest++ = 0x007F & src[0];
-      src += 1;
+        if (src[0] <= 0x7F)
+        {
+            *dest++ = 0x007F & src[0];
+            src += 1;
+        }
+        else if (src[0] <= 0xDF
+            && is_utf8_trailing_octet (src[1]))
+        {
+            *dest++ = ((0x001F & src[0]) << 6)
+                | (0x003F & src[1]);
+            src += 2;
+        }
+        else if (src[0] <= 0xEF
+            && is_utf8_trailing_octet (src[1])
+            && is_utf8_trailing_octet (src[2]))
+        {
+            *dest++ = ((0x000F & src[0]) << 12)
+                | ((0x003F & src[1]) << 6)
+                | (0x003F & src[2]);
+                src += 3;
+        }
+        else
+        {
+            *dest++ = 0;
+            break;
+        }
     }
-    else if (src[0] <= 0xDF
-        && is_utf8_trailing_octet (src[1]))
-    {
-      *dest++ = ((0x001F & src[0]) << 6)
-        | (0x003F & src[1]);
-      src += 2;
-    }
-    else if (src[0] <= 0xEF
-        && is_utf8_trailing_octet (src[1])
-        && is_utf8_trailing_octet (src[2]))
-    {
-      *dest++ = ((0x000F & src[0]) << 12)
-        | ((0x003F & src[1]) << 6)
-        | (0x003F & src[2]);
-        src += 3;
-    }
-    else
-    {
-      *dest++ = 0;
-      break;
-    }
-  }
-  return dest;
+    return dest;
 }
 
 /* Convert UCS-2 to UTF-8.  */
@@ -70,27 +70,27 @@ uint8_t *
 ucs2_to_utf8 (uint8_t *dest, const uint16_t *src,
               size_t size)
 {
-  size_t i;
-  for (i = 0; i < size; i++)
-  {
-    if (src[i] <= 0x007F)
-      *dest++ = src[i];
-    else if (src[i] <= 0x07FF)
+    size_t i;
+    for (i = 0; i < size; i++)
     {
-      *dest++ = (src[i] >> 6) | 0xC0;
-      *dest++ = (src[i] & 0x3F) | 0x80;
+        if (src[i] <= 0x007F)
+            *dest++ = src[i];
+        else if (src[i] <= 0x07FF)
+        {
+            *dest++ = (src[i] >> 6) | 0xC0;
+            *dest++ = (src[i] & 0x3F) | 0x80;
+        }
+        else if (src[i] >= 0xD800 && src[i] <= 0xDFFF)
+        {
+            *dest++ = 0;
+            break;
+        }
+        else
+        {
+            *dest++ = (src[i] >> 12) | 0xE0;
+            *dest++ = ((src[i] >> 6) & 0x3F) | 0x80;
+            *dest++ = (src[i] & 0x3F) | 0x80;
+        }
     }
-    else if (src[i] >= 0xD800 && src[i] <= 0xDFFF)
-    {
-      *dest++ = 0;
-      break;
-    }
-    else
-    {
-      *dest++ = (src[i] >> 12) | 0xE0;
-      *dest++ = ((src[i] >> 6) & 0x3F) | 0x80;
-      *dest++ = (src[i] & 0x3F) | 0x80;
-    }
-  }
-  return dest;
+    return dest;
 }

@@ -24,7 +24,7 @@
  *
  */
 
-#include <ntboot.h>
+#include "ntloader.h"
 
 /* Offsets within parameter block */
 #define PARAM_VECTOR 0x00
@@ -46,6 +46,10 @@
 
 /** Paging bit in CR0 */
 #define CR0_PG 0x80000000
+
+	.section ".note.GNU-stack", "", @progbits
+
+#if defined(__i386__) || defined(__x86_64__)
 
 	.code32
 	.arch	i386
@@ -70,7 +74,7 @@ call_real:
 	pushl	%ebp
 	subl	$PARAM_LEN, %esp
 	movl	%esp, %edi
-	movl	$(PARAM_LEN / 4), %ecx
+	movl	$( PARAM_LEN / 4 ), %ecx
 	cld
 	rep movsl
 	movl	%esp, %ebp	/* %ebp points to parameter block copy */
@@ -78,7 +82,7 @@ call_real:
 	pushl	%esi
 
 	/* Set up 16-bit segment registers and stack */
-	ljmp	$REAL_CS, $(1f - BASE_ADDRESS)
+	ljmp	$REAL_CS, $( 1f - BASE_ADDRESS )
 1:	.code16
 	movw	$REAL_DS, %ax
 	movw	%ax, %ds
@@ -92,16 +96,16 @@ call_real:
 	/* Switch to real mode */
 	movl	%cr0, %eax
 	pushl	%eax
-	andl	$~(CR0_PG | CR0_PE), %eax
+	andl	$~( CR0_PG | CR0_PE ), %eax
 	movl	%eax, %cr0
-	data32 ljmp $BASE_SEG, $(1f - BASE_ADDRESS)
+	data32 ljmp $BASE_SEG, $( 1f - BASE_ADDRESS )
 1:	movw	$BASE_SEG, %ax
 	movw	%ax, %ds
 	movw	%ax, %es
 	movw	%ax, %fs
 	movw	%ax, %gs
 	movw	%ax, %ss
-	addr32 data32 lidt %cs:(rm_idtr - BASE_ADDRESS)
+	addr32 data32 lidt %cs:( rm_idtr - BASE_ADDRESS )
 
 	/* Load registers from parameter block copy */
 	movl	PARAM_EAX(%bp), %eax
@@ -137,8 +141,8 @@ call_real:
 	movw	%gs, PARAM_GS(%bp)
 
 	/* Switch back to protected mode */
-	addr32 data32 lgdt %cs:(gdtr - BASE_ADDRESS)
-	addr32 data32 lidt %cs:(idtr - BASE_ADDRESS)
+	addr32 data32 lgdt %cs:( gdtr - BASE_ADDRESS )
+	addr32 data32 lidt %cs:( idtr - BASE_ADDRESS )
 	popl	%eax
 	movl	%eax, %cr0
 	data32 ljmp $FLAT_CS, $1f
@@ -156,7 +160,7 @@ call_real:
 	 */
 	popl	%edi
 	movl	%esp, %esi
-	movl	$(PARAM_LEN / 4), %ecx
+	movl	$( PARAM_LEN / 4 ), %ecx
 	cld
 	rep movsl
 	movl	0(%esi), %esp
@@ -182,11 +186,11 @@ call_interrupt:
 	/* Extract INT number from parameter block and update INT instruction */
 	movl	8(%ebp), %esi		/* %esi points to parameter block */
 	movl	PARAM_VECTOR(%esi), %ebx
-	movb	%bl, (dynamic_int + 1)
+	movb	%bl, ( dynamic_int + 1 )
 
 	/* Overwrite vector with dynamic INT code fragment */
 	movw	$BASE_SEG, (PARAM_VECTOR + 2)(%esi)
-	movl	$(dynamic_int - BASE_ADDRESS), %eax
+	movl	$( dynamic_int - BASE_ADDRESS ), %eax
 	movw	%ax, PARAM_VECTOR(%esi)
 
 	/* Call dynamic INT code fragment */
@@ -214,7 +218,7 @@ dynamic_int:
 	/* Real-mode interrupt descriptor table */
 	.section ".data16", "ax", @progbits
 rm_idtr:
-	.word	((256 * 4) - 1)	/* Limit (256 segment:offset pairs) */
+	.word	( ( 256 * 4 ) - 1 )	/* Limit (256 segment:offset pairs) */
 	.long	0			/* Base */
 	.size	rm_idtr, . - rm_idtr
 
@@ -225,3 +229,5 @@ _rmstack:
 	.space	8192
 	.size	_rmstack, . - _rmstack
 _ermstack:
+
+#endif /* defined(__i386__) || defined(__x86_64__) */
