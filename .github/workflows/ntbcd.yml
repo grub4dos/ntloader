@@ -1,0 +1,27 @@
+name: NTBCD
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+
+jobs:
+
+  generate-bcd:
+    runs-on: windows-latest
+
+    steps:
+    - name: Run git checkout
+      uses: actions/checkout@v4
+
+    - name: Build BCD
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        .\utils\bcd.bat
+
+    - name: Upload BCD
+      uses: actions/upload-artifact@v4
+      with:
+        name: bcd
+        path: build/bcd
