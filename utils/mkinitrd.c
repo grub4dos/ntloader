@@ -33,6 +33,9 @@
 #define lstat stat
 #endif
 
+#define ALIGN_UP_OVERHEAD(addr, align) \
+    ((-(addr)) & ((typeof (addr)) (align) - 1))
+
 static char
 hex (uint8_t val)
 {
@@ -71,34 +74,25 @@ write_header (FILE *out,
     set_field (header.c_namesize, len);
     set_field (header.c_chksum, 0);
 
-    if (sizeof (header) != 110)
-    {
-        perror ("cpio header");
-        return -1;
-    }
-
-    if(fwrite (&header, 1, sizeof (header), out) != sizeof (header))
+    if (fwrite (&header, 1, sizeof (header), out) != sizeof (header))
     {
         perror ("fwrite header");
         return -1;
     }
 
-    if(fwrite (name, 1, len, out) != len)
+    if (fwrite (name, 1, len, out) != len)
     {
         perror ("fwrite name");
         return -1;
     }
 
-    size_t total = sizeof (header) + len;
-    int pad = (4 - (total % 4)) % 4;
-    if (pad > 0)
+    ssize_t total = sizeof (header) + len;
+    size_t pad = ALIGN_UP_OVERHEAD (total, 4);
+    char zero[4] = {0, 0, 0, 0};
+    if (fwrite (zero, 1, pad, out) != pad)
     {
-        char zero[4] = {0, 0, 0, 0};
-        if (fwrite (zero, 1, pad, out) != (size_t) pad)
-        {
-            perror ("fwrite header padding");
-            return -1;
-        }
+        perror ("fwrite header padding");
+        return -1;
     }
     return 0;
 }
@@ -110,12 +104,12 @@ copy_data (FILE *out, FILE *in, size_t fsize)
     char buffer[4096];
     while(remaining > 0)
     {
-        size_t to_read = remaining < sizeof(buffer) ?
-                            remaining : sizeof(buffer);
+        size_t to_read = remaining < sizeof (buffer) ?
+                            remaining : sizeof (buffer);
         size_t r = fread (buffer, 1, to_read, in);
-        if(r == 0)
+        if (r == 0)
         {
-            if(ferror (in))
+            if (ferror (in))
             {
                 perror ("fread");
                 return -1;
@@ -130,16 +124,14 @@ copy_data (FILE *out, FILE *in, size_t fsize)
         remaining -= r;
     }
 
-    int pad = (4 - (fsize % 4)) % 4;
-    if (pad > 0)
+    size_t pad = ALIGN_UP_OVERHEAD ((ssize_t) fsize, 4);
+    char zero[4] = {0, 0, 0, 0};
+    if (fwrite (zero, 1, pad, out) != pad)
     {
-        char zero[4] = {0, 0, 0, 0};
-        if (fwrite (zero, 1, pad, out) != (size_t) pad)
-        {
-            perror ("fwrite data padding");
-            return -1;
-        }
+        perror ("fwrite data padding");
+        return -1;
     }
+
     return 0;
 }
 
@@ -154,12 +146,12 @@ process_file (const char *path,
         return -1;
 
     FILE *in = fopen (path, "rb");
-    if(!in)
+    if (!in)
     {
         perror (path);
         return -1;
     }
-    if(copy_data (out, in, fsize) != 0)
+    if (copy_data (out, in, fsize) != 0)
     {
         fclose (in);
         return -1;
