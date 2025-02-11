@@ -39,13 +39,38 @@
 
 #include "efi/Uefi.h"
 #include "efi/Protocol/LoadedImage.h"
+#include "efi/Protocol/DevicePath.h"
+
+/**
+ * Initialise device path
+ *
+ * @v name		Variable name
+ * @v type		Type
+ * @v subtype		Subtype
+ */
+#define EFI_DEVPATH_INIT(name, type, subtype) \
+{ \
+    .Type = (type), \
+    .SubType = (subtype), \
+    .Length[0] = (sizeof (name) & 0xff), \
+    .Length[1] = (sizeof (name) >> 8), \
+}
+
+/**
+ * Initialise device path end
+ *
+ * @v name		Variable name
+ */
+#define EFI_DEVPATH_END_INIT(name) \
+    EFI_DEVPATH_INIT (name, \
+                      END_DEVICE_PATH_TYPE, \
+                      END_ENTIRE_DEVICE_PATH_SUBTYPE)
 
 extern EFI_SYSTEM_TABLE *efi_systab;
 extern EFI_HANDLE efi_image_handle;
 
 extern EFI_GUID efi_block_io_protocol_guid;
 extern EFI_GUID efi_device_path_protocol_guid;
-extern EFI_GUID efi_graphics_output_protocol_guid;
 extern EFI_GUID efi_loaded_image_protocol_guid;
 extern EFI_GUID efi_simple_file_system_protocol_guid;
 extern EFI_GUID efi_load_file2_protocol_guid;

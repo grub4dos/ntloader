@@ -97,18 +97,6 @@ static void call_interrupt_wrapper (struct bootapp_callback_params *params)
         disable_paging (&state);
 
     }
-#if 0
-    else if ((params->vector.interrupt == 0x10) &&
-              (params->ax == 0x4f01))
-    {
-
-        /* Mark all VESA video modes as unsupported */
-        uint16_t *attributes = REAL_PTR (params->es, params->di);
-        call_interrupt (params);
-        *attributes &= ~0x0001;
-
-    }
-#endif
     else
     {
 
@@ -253,8 +241,7 @@ int main (void)
     init_cookie();
 
     /* Print welcome banner */
-    printf ("\n\nntloader " VERSION " -- Windows NT6+ OS/VHD/WIM "
-             "loader -- https://github.com/grub4dos/ntloader\n\n");
+    printf ("\n\nntloader " VERSION "\n\n");
 
     /* Process command line */
     process_cmdline (cmdline);

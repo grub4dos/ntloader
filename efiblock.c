@@ -30,7 +30,6 @@
 #include "ntloader.h"
 #include "vdisk.h"
 #include "efi.h"
-#include "efipath.h"
 #include "efiblock.h"
 
 /** A block I/O device */
@@ -131,53 +130,60 @@ efi_flush_blocks (EFI_BLOCK_IO_PROTOCOL *this)
 }
 
 /** GUID used in vendor device path */
-#define EFIBLOCK_GUID {							\
-	0x1322d197, 0x15dc, 0x4a45,					\
-	{ 0xa6, 0xa4, 0xfa, 0x57, 0x05, 0x4e, 0xa6, 0x14 }		\
-	}
+#define EFIBLOCK_GUID \
+    { \
+        0x1322d197, 0x15dc, 0x4a45, \
+        { 0xa6, 0xa4, 0xfa, 0x57, 0x05, 0x4e, 0xa6, 0x14 } \
+    }
 
 /**
  * Initialise vendor device path
  *
  * @v name		Variable name
  */
-#define EFIBLOCK_DEVPATH_VENDOR_INIT(name) {				\
-	.Header = EFI_DEVPATH_INIT (name, HARDWARE_DEVICE_PATH,	\
-				     HW_VENDOR_DP),			\
-	.Guid = EFIBLOCK_GUID,						\
-	}
+#define EFIBLOCK_DEVPATH_VENDOR_INIT(name) \
+    { \
+        .Header = EFI_DEVPATH_INIT (name, \
+                                    HARDWARE_DEVICE_PATH, \
+                                    HW_VENDOR_DP), \
+        .Guid = EFIBLOCK_GUID, \
+    }
 
 /**
  * Initialise ATA device path
  *
  * @v name		Variable name
  */
-#define EFIBLOCK_DEVPATH_ATA_INIT(name) {				\
-	.Header = EFI_DEVPATH_INIT (name, MESSAGING_DEVICE_PATH,	\
-				     MSG_ATAPI_DP),			\
-	.PrimarySecondary = 0,						\
-	.SlaveMaster = 0,						\
-	.Lun = 0,							\
-	}
+#define EFIBLOCK_DEVPATH_ATA_INIT(name) \
+    { \
+        .Header = EFI_DEVPATH_INIT (name, \
+                                    MESSAGING_DEVICE_PATH, \
+                                    MSG_ATAPI_DP), \
+        .PrimarySecondary = 0, \
+        .SlaveMaster = 0, \
+        .Lun = 0, \
+    }
 
 /**
  * Initialise hard disk device path
  *
  * @v name		Variable name
  */
-#define EFIBLOCK_DEVPATH_HD_INIT(name) {				\
-	.Header = EFI_DEVPATH_INIT (name, MEDIA_DEVICE_PATH,		\
-				     MEDIA_HARDDRIVE_DP),		\
-	.PartitionNumber = 1,						\
-	.PartitionStart = VDISK_PARTITION_LBA,				\
-	.PartitionSize = VDISK_PARTITION_COUNT,				\
-	.Signature[0] = ((VDISK_MBR_SIGNATURE >> 0) & 0xff),	\
-	.Signature[1] = ((VDISK_MBR_SIGNATURE >> 8) & 0xff),	\
-	.Signature[2] = ((VDISK_MBR_SIGNATURE >> 16) & 0xff),	\
-	.Signature[3] = ((VDISK_MBR_SIGNATURE >> 24) & 0xff),	\
-	.MBRType = MBR_TYPE_PCAT,					\
-	.SignatureType = SIGNATURE_TYPE_MBR,				\
-	}
+#define EFIBLOCK_DEVPATH_HD_INIT(name) \
+    { \
+        .Header = EFI_DEVPATH_INIT (name, \
+                                    MEDIA_DEVICE_PATH, \
+                                    MEDIA_HARDDRIVE_DP), \
+        .PartitionNumber = 1, \
+        .PartitionStart = VDISK_PARTITION_LBA, \
+        .PartitionSize = VDISK_PARTITION_COUNT, \
+        .Signature[0] = ((VDISK_MBR_SIGNATURE >> 0) & 0xff), \
+        .Signature[1] = ((VDISK_MBR_SIGNATURE >> 8) & 0xff), \
+        .Signature[2] = ((VDISK_MBR_SIGNATURE >> 16) & 0xff), \
+        .Signature[3] = ((VDISK_MBR_SIGNATURE >> 24) & 0xff), \
+        .MBRType = MBR_TYPE_PCAT, \
+        .SignatureType = SIGNATURE_TYPE_MBR, \
+    }
 
 /** Virtual disk media */
 static EFI_BLOCK_IO_MEDIA efi_vdisk_media =
@@ -206,7 +212,8 @@ static struct
 /** Virtual disk device */
 static struct efi_block efi_vdisk =
 {
-    .block = {
+    .block =
+    {
         .Revision = EFI_BLOCK_IO_PROTOCOL_REVISION,
         .Media = &efi_vdisk_media,
         .Reset = efi_reset_blocks,
@@ -248,7 +255,8 @@ static struct
 /** Virtual partition device */
 static struct efi_block efi_vpartition =
 {
-    .block = {
+    .block =
+    {
         .Revision = EFI_BLOCK_IO_PROTOCOL_REVISION,
         .Media = &efi_vpartition_media,
         .Reset = efi_reset_blocks,
@@ -286,8 +294,10 @@ void efi_install (EFI_HANDLE *vdisk, EFI_HANDLE *vpartition)
     /* Install virtual partition */
     if ((efirc = bs->InstallMultipleProtocolInterfaces (
                        vpartition,
-                       &efi_block_io_protocol_guid, &efi_vpartition.block,
-                       &efi_device_path_protocol_guid, efi_vpartition.path,
+                       &efi_block_io_protocol_guid,
+                       &efi_vpartition.block,
+                       &efi_device_path_protocol_guid,
+                       efi_vpartition.path,
                        NULL)) != 0)
     {
         die ("Could not install partition block I/O protocols: %#lx\n",
@@ -313,7 +323,8 @@ static struct
     .vendor = EFIBLOCK_DEVPATH_VENDOR_INIT (efi_bootmgfw_path.vendor),
     .ata = EFIBLOCK_DEVPATH_ATA_INIT (efi_bootmgfw_path.ata),
     .hd = EFIBLOCK_DEVPATH_HD_INIT (efi_bootmgfw_path.hd),
-    .file = {
+    .file =
+    {
         .header = EFI_DEVPATH_INIT (efi_bootmgfw_path.file,
                                      MEDIA_DEVICE_PATH,
                                      MEDIA_FILEPATH_DP),
@@ -323,4 +334,5 @@ static struct
 };
 
 /** Boot image path */
-EFI_DEVICE_PATH_PROTOCOL *bootmgfw_path = &efi_bootmgfw_path.vendor.Header;
+EFI_DEVICE_PATH_PROTOCOL *bootmgfw_path =
+    &efi_bootmgfw_path.vendor.Header;

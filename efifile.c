@@ -34,7 +34,6 @@
 #include "payload.h"
 #include "efi.h"
 #include "efifile.h"
-#include "efipath.h"
 #include "efi/Protocol/LoadFile2.h"
 #include "efi/Guid/LinuxEfiInitrdMedia.h"
 

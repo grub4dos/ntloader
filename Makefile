@@ -8,7 +8,7 @@ SBAT_GENERATION := 1
 #
 OBJECTS := prefix.o startup.o callback.o main.o vsprintf.o string.o peloader.o
 OBJECTS += int13.o vdisk.o cpio.o stdio.o die.o efi.o efimain.o
-OBJECTS += efiguid.o efifile.o efipath.o efiboot.o efiblock.o cmdline.o
+OBJECTS += efifile.o efiboot.o efiblock.o cmdline.o
 OBJECTS += cookie.o paging.o memmap.o
 OBJECTS += reg.o charset.o bcd.o fsuuid.o gpt.o msdos.o
 OBJECTS += biosdisk.o efidisk.o payload.o
