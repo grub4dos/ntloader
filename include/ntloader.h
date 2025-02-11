@@ -120,24 +120,26 @@ static inline void bochsbp (void)
 }
 
 /** Debugging output */
+#if DEBUG == 1 || DEBUG == 2
 #define DBG(...) \
 do \
 { \
-    if (DEBUG & 1) \
-    { \
-        printf (__VA_ARGS__); \
-    } \
+    printf (__VA_ARGS__); \
 } while (0)
+#else
+#define DBG(...)
+#endif
 
 /** Verbose debugging output */
+#if DEBUG == 2
 #define DBG2(...) \
 do \
 { \
-    if (DEBUG & 2) \
-    { \
-        printf (__VA_ARGS__); \
-    } \
+    printf (__VA_ARGS__); \
 } while (0)
+#else
+#define DBG2(...)
+#endif
 
 /* Branch prediction macros */
 #define likely(x) __builtin_expect (!! (x), 1)

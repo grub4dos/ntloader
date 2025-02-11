@@ -561,7 +561,7 @@ void vdisk_read (uint64_t lba, unsigned int count, void *data)
 {
     struct vdisk_region *region;
     void (* build) (uint64_t lba, unsigned int count, void *data);
-    const char *name;
+    const char *name __unused;
     uint64_t start = lba;
     uint64_t end = (lba + count);
     uint64_t frag_start = start;

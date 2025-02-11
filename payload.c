@@ -109,11 +109,9 @@ void extract_initrd (void *ptr, size_t len)
 {
     if (cpio_extract (ptr, len, add_file) != 0)
         die ("FATAL: could not extract initrd files\n");
-    getchar();
 
     if (!nt_cmdline->bootmgr)
         die ("FATAL: no bootmgr\n");
 
     bcd_patch_data ();
-    getchar();
 }

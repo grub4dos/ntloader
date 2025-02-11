@@ -750,7 +750,9 @@ static void clear_volatile(hive_t *h, HKEY key)
             clear_volatile(h, 0x1000 + ri->List[i]);
     }
     else
+    {
         DBG("Unhandled registry signature 0x%x.\n", sig);
+    }
 }
 
 static enum reg_bool validate_bins(const uint8_t *data, size_t len)
@@ -771,7 +773,7 @@ static enum reg_bool validate_bins(const uint8_t *data, size_t len)
         if (hb->FileOffset != off)
         {
             DBG("hbin FileOffset in hive_t was 0x%x, expected %zx.\n", hb->FileOffset,
-                   off);
+                 off);
             return false;
         }
 

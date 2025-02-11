@@ -39,7 +39,6 @@
 #include "paging.h"
 #include "memmap.h"
 #include "biosdisk.h"
-#include "bcd.h"
 
 /** Start of our image (defined by linker) */
 extern char _start[];
@@ -245,11 +244,9 @@ int main (void)
 
     /* Process command line */
     process_cmdline (cmdline);
-    getchar();
 
     biosdisk_init ();
     biosdisk_iterate ();
-    getchar();
 
     /* Initialise paging */
     init_paging();

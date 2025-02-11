@@ -48,7 +48,6 @@
 
 struct nt_args
 {
-    /* BCD options */
     uint8_t testmode;
     uint8_t hires;
     uint8_t hal;

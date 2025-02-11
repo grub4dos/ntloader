@@ -32,7 +32,7 @@ check_fsuuid (void *disk, uint64_t lba,
 {
     union volume_boot_record vbr;
     char uuid[17] = " ";
-    const char *fs = "-";
+    const char *fs __unused = "-";
     if (!disk_read (disk, lba, sizeof (vbr), &vbr))
     {
         DBG ("invalid partition\n");

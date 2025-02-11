@@ -53,11 +53,11 @@ struct efi_block
  * @ret efirc		EFI status code
  */
 static EFI_STATUS EFIAPI
-efi_reset_blocks (EFI_BLOCK_IO_PROTOCOL *this, BOOLEAN extended)
+efi_reset_blocks (EFI_BLOCK_IO_PROTOCOL *this, BOOLEAN extended __unused)
 {
-    struct efi_block *block =
+    struct efi_block *block __unused =
         container_of (this, struct efi_block, block);
-    void *retaddr = __builtin_return_address (0);
+    void *retaddr __unused = __builtin_return_address (0);
 
     DBG2 ("EFI %s %sreset -> %p\n",
            block->name, (extended ? "extended " : ""), retaddr);
@@ -75,12 +75,12 @@ efi_reset_blocks (EFI_BLOCK_IO_PROTOCOL *this, BOOLEAN extended)
  * @ret efirc		EFI status code
  */
 static EFI_STATUS EFIAPI
-efi_read_blocks (EFI_BLOCK_IO_PROTOCOL *this, UINT32 media, EFI_LBA lba,
-                  UINTN len, VOID *data)
+efi_read_blocks (EFI_BLOCK_IO_PROTOCOL *this, UINT32 media __unused,
+                 EFI_LBA lba, UINTN len, VOID *data)
 {
     struct efi_block *block =
         container_of (this, struct efi_block, block);
-    void *retaddr = __builtin_return_address (0);
+    void *retaddr __unused = __builtin_return_address (0);
 
     DBG2 ("EFI %s read media %08x LBA %#llx to %p+%zx -> %p\n",
            block->name, media, lba, data, ((size_t) len), retaddr);
@@ -100,12 +100,12 @@ efi_read_blocks (EFI_BLOCK_IO_PROTOCOL *this, UINT32 media, EFI_LBA lba,
  */
 static EFI_STATUS EFIAPI
 efi_write_blocks (EFI_BLOCK_IO_PROTOCOL *this __unused,
-                   UINT32 media __unused, EFI_LBA lba __unused,
-                   UINTN len __unused, VOID *data __unused)
+                  UINT32 media __unused, EFI_LBA lba __unused,
+                  UINTN len __unused, VOID *data __unused)
 {
-    struct efi_block *block =
+    struct efi_block *block __unused =
         container_of (this, struct efi_block, block);
-    void *retaddr = __builtin_return_address (0);
+    void *retaddr __unused = __builtin_return_address (0);
 
     DBG2 ("EFI %s write media %08x LBA %#llx from %p+%zx -> %p\n",
            block->name, media, lba, data, ((size_t) len), retaddr);
@@ -121,9 +121,9 @@ efi_write_blocks (EFI_BLOCK_IO_PROTOCOL *this __unused,
 static EFI_STATUS EFIAPI
 efi_flush_blocks (EFI_BLOCK_IO_PROTOCOL *this)
 {
-    struct efi_block *block =
+    struct efi_block *block __unused =
         container_of (this, struct efi_block, block);
-    void *retaddr = __builtin_return_address (0);
+    void *retaddr __unused = __builtin_return_address (0);
 
     DBG2 ("EFI %s flush -> %p\n", block->name, retaddr);
     return 0;
