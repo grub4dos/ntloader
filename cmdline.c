@@ -46,12 +46,14 @@ static struct nt_args args =
     .novesa = NTARG_BOOL_FALSE,
     .safemode = NTARG_BOOL_FALSE,
     .altshell = NTARG_BOOL_FALSE,
+    .exportcd = NTARG_BOOL_FALSE,
 
     .nx = NX_OPTIN,
     .pae = PAE_DEFAULT,
     .timeout = 0,
     .safeboot = SAFE_MINIMAL,
     .gfxmode = GFXMODE_1024X768,
+    .imgofs = 65536,
 
     .loadopt = BCD_DEFAULT_CMDLINE,
     .winload = "",
@@ -172,6 +174,14 @@ void process_cmdline (char *cmdline)
             convert_path (args.filepath, 1);
             args.boottype = NTBOOT_VHD;
         }
+        else if (strcmp (key, "ram") == 0)
+        {
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "ram");
+            snprintf (args.filepath, 256, "%s", value);
+            convert_path (args.filepath, 1);
+            args.boottype = NTBOOT_RAM;
+        }
         else if (strcmp (key, "file") == 0)
         {
             if (! value || ! value[0])
@@ -213,6 +223,10 @@ void process_cmdline (char *cmdline)
             args.altshell = convert_bool (value);
             args.safemode = NTARG_BOOL_TRUE;
         }
+        else if (strcmp (key, "exportascd") == 0)
+        {
+            args.exportcd = convert_bool (value);
+        }
         else if (strcmp (key, "nx") == 0)
         {
             if (! value || strcasecmp (value, "OptIn") == 0)
@@ -253,6 +267,15 @@ void process_cmdline (char *cmdline)
             else if (strcasecmp (value, "1024x600") == 0)
                 args.gfxmode = GFXMODE_1024X600;
         }
+        else if (strcmp (key, "imgofs") == 0)
+        {
+            char *endp;
+            if (! value || ! value[0])
+                die ("Argument \"%s\" needs a value\n", "imgofs");
+            args.imgofs = strtoul (value, &endp, 0);
+            if (*endp)
+                die ("Invalid imgofs \"%s\"\n", value);
+        }
         else if (strcmp (key, "loadopt") == 0)
         {
             if (! value || ! value[0])
@@ -264,21 +287,15 @@ void process_cmdline (char *cmdline)
         {
             if (! value || ! value[0])
                 die ("Argument \"%s\" needs a value\n", "winload");
-            else
-            {
-                snprintf (args.winload, 64, "%s", value);
-                convert_path (args.winload, 1);
-            }
+            snprintf (args.winload, 64, "%s", value);
+            convert_path (args.winload, 1);
         }
         else if (strcmp (key, "sysroot") == 0)
         {
             if (! value || ! value[0])
                 die ("Argument \"%s\" needs a value\n", "sysroot");
-            else
-            {
-                snprintf (args.sysroot, 32, "%s", value);
-                convert_path (args.sysroot, 1);
-            }
+            snprintf (args.sysroot, 32, "%s", value);
+            convert_path (args.sysroot, 1);
         }
         else if (strcmp (key, "initrdfile") == 0 ||
             strcmp (key, "initrd") == 0)

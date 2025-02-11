@@ -136,16 +136,21 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     uint8_t *data;
     uint32_t len, ofs;
     uint8_t sdi[] = GUID_BIN_RAMDISK;
+    uint8_t rdi[] = GUID_BIN_RDIMAGE;
     data = bcd_find_hive (hive, objects, guid, keyname, &len);
     memset (data, 0, len);
     switch (boottype)
     {
         case NTBOOT_WIM:
+        case NTBOOT_RAM:
         {
             if (len < 0x028a)
                 die ("WIM device path (%ls->%ls) length error (%x)\n",
-                    guid, keyname, len);
-            memcpy (data + 0x0000, sdi, sizeof (sdi)); // sdi guid
+                     guid, keyname, len);
+            if (boottype == NTBOOT_RAM)
+                memcpy (data + 0x0000, rdi, sizeof (rdi));
+            else
+                memcpy (data + 0x0000, sdi, sizeof (sdi));
             data[0x0014] = 0x01;
             data[0x0018] = 0x7a; data[0x0019] = 0x02; // len - 0x10
             data[0x0020] = 0x03;
@@ -194,7 +199,9 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
     data[ofs + 0x24] = nt_cmdline->partmap;
     memcpy (data + ofs + 0x28, nt_cmdline->diskid, 16);
-    if (boottype == NTBOOT_WIM || boottype == NTBOOT_VHD)
+    if (boottype == NTBOOT_WIM ||
+        boottype == NTBOOT_VHD ||
+        boottype == NTBOOT_RAM)
         utf8_to_ucs2 ((uint16_t *)(data + ofs + 0x48), MAX_PATH,
                       (uint8_t *)nt_cmdline->filepath);
     DBG ("...patched %ls->%ls (device%x)\n", guid, keyname, boottype);
@@ -230,6 +237,7 @@ bcd_patch_data (void)
             entry_guid = GUID_WOSB;
             break;
         case NTBOOT_WIM:
+        case NTBOOT_RAM:
         default:
             entry_guid = GUID_WIMB;
     }
@@ -251,6 +259,12 @@ bcd_patch_data (void)
                   BCDOPT_WINLOAD, BCD_DEFAULT_WINRESUME); // resume
     bcd_patch_sz (&hive, objects, GUID_HIBR,
                   BCDOPT_SYSROOT, BCD_DEFAULT_HIBERFIL); // hiberfil
+
+    /* Patch Objects->{Ramdisk} */
+    bcd_patch_bool (&hive, objects, GUID_RAMD,
+                    BCDOPT_EXPORTCD, nt_cmdline->exportcd);
+    bcd_patch_u64 (&hive, objects, GUID_RAMD,
+                   BCDOPT_IMGOFS, nt_cmdline->imgofs);
 
     /* Patch Objects->{Options} */
     bcd_patch_sz (&hive, objects, GUID_OPTN,

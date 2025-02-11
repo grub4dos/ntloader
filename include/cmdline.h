@@ -35,11 +35,10 @@
 #define NTBOOT_VHD 0x01
 #define NTBOOT_WOS 0x02
 #define NTBOOT_REC 0x03
+#define NTBOOT_RAM 0x04
 #if 0
-#define NTBOOT_APP 0x04
-#define NTBOOT_MEM 0x05
-#define NTBOOT_RAM 0x06
-#define NTBOOT_ISO 0x07
+#define NTBOOT_APP 0x05
+#define NTBOOT_MEM 0x06
 #endif
 
 #define NTARG_BOOL_TRUE  1
@@ -58,12 +57,14 @@ struct nt_args
     uint8_t novesa;
     uint8_t safemode;
     uint8_t altshell;
+    uint8_t exportcd;
 
     uint64_t nx;
     uint64_t pae;
     uint64_t timeout;
     uint64_t safeboot;
     uint64_t gfxmode;
+    uint64_t imgofs;
 
     char loadopt[128];
     char winload[64];

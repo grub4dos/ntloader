@@ -15,6 +15,8 @@ set guidsbt={19260817-6666-8888-abcd-200000000000}
 set guidhir={19260817-6666-8888-abcd-110000000000}
 set guidlor={19260817-6666-8888-abcd-120000000000}
 
+set guidram={19260817-6666-8888-abcd-101000000000}
+
 set winload=\WINLOAD0000000000000000000000000000000000000000000000000000000
 set windir=\WINDIR000000000000000000000000
 set wincmd=DDISABLE_INTEGRITY_CHECKS000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
@@ -69,6 +71,10 @@ bcdedit %bcd% /set %guidsbt% safebootalternateshell yes
 bcdedit %bcd% /create {ramdiskoptions}
 bcdedit %bcd% /set {ramdiskoptions} ramdisksdidevice "boot"
 bcdedit %bcd% /set {ramdiskoptions} ramdisksdipath \boot\boot.sdi
+
+bcdedit %bcd% /create %guidram% /device
+bcdedit %bcd% /set %guidram% ramdiskimageoffset 65536
+bcdedit %bcd% /set %guidram% exportascd yes
 
 bcdedit %bcd% /create %guidwim% /d "NT6+ WIM" /application OSLOADER
 bcdedit %bcd% /set %guidwim% device ramdisk=[C:]%wimfile%,{ramdiskoptions}
