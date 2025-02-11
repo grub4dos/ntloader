@@ -11,6 +11,8 @@ elf2efi32
 elf2efi64
 fsuuid
 fsuuid.exe
+mkinitrd
+mkinitrd.exe
 ntloader.i386
 ntloader.arm64
 ntloader.x86_64

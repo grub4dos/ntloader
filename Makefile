@@ -277,10 +277,14 @@ elf2efi64 : utils/elf2efi.c Makefile
 #
 # Initrd rootfs
 
-ROOTFS_DIR := utils/rootfs
-ROOTFS_FILES := $(shell find $(ROOTFS_DIR) -type f)
-initrd.cpio : $(ROOTFS_FILES)
-	@$(CD) $(ROOTFS_DIR) && find * | cpio -o -H newc > ../../$@
+mkinitrd.exe : utils/mkinitrd.c
+	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
+
+mkinitrd : utils/mkinitrd.c
+	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
+
+initrd.cpio : mkinitrd
+	./mkinitrd utils/rootfs $@
 
 ###############################################################################
 #
@@ -300,6 +304,7 @@ clean :
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f elf2efi32 elf2efi64
 	$(RM) -f fsuuid fsuuid.exe
+	$(RM) -f mkinitrd mkinitrd.exe
 	$(RM) -f initrd.cpio
 	$(RM) -f ntloader.i386 ntloader.i386.*
 	$(RM) -f ntloader.x86_64 ntloader.x86_64.*
