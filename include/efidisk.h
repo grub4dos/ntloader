@@ -35,11 +35,6 @@ struct efidisk_data
     struct efidisk_data *next;
 };
 
-extern void *efi_malloc (size_t size);
-extern void efi_free (void *ptr);
-extern void efi_free_pages (void *ptr, UINTN pages);
-extern void *efi_allocate_pages (UINTN pages);
-
 extern int efidisk_read (void *disk, uint64_t sector, size_t len, void *buf);
 
 extern void efidisk_iterate (void);

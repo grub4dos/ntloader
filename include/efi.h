@@ -75,4 +75,9 @@ extern EFI_GUID efi_loaded_image_protocol_guid;
 extern EFI_GUID efi_simple_file_system_protocol_guid;
 extern EFI_GUID efi_load_file2_protocol_guid;
 
+extern void *efi_malloc (size_t size);
+extern void efi_free (void *ptr);
+extern void efi_free_pages (void *ptr, UINTN pages);
+extern void *efi_allocate_pages (UINTN pages);
+
 #endif /* _EFI_H */

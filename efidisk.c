@@ -32,40 +32,6 @@ static struct efidisk_data *efi_hd = 0;
 static struct efidisk_data *efi_cd = 0;
 static struct efidisk_data *efi_fd = 0;
 
-void *efi_malloc (size_t size)
-{
-    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-    EFI_STATUS efirc;
-    void *ptr = NULL;
-    efirc = bs->AllocatePool (EfiLoaderData, size, &ptr);
-    if (efirc != EFI_SUCCESS || ! ptr)
-        die ("Could not allocate memory.\n");
-    return ptr;
-}
-
-void efi_free (void *ptr)
-{
-    efi_systab->BootServices->FreePool (ptr);
-    ptr = 0;
-}
-
-void efi_free_pages (void *ptr, UINTN pages)
-{
-    EFI_PHYSICAL_ADDRESS addr = (intptr_t) ptr;
-    efi_systab->BootServices->FreePages (addr, pages);
-}
-
-void *efi_allocate_pages (UINTN pages)
-{
-    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-    EFI_STATUS efirc;
-    EFI_PHYSICAL_ADDRESS addr = 0;
-    efirc = bs->AllocatePages (AllocateAnyPages, EfiLoaderData, pages, &addr);
-    if (efirc != EFI_SUCCESS)
-        die ("Could not allocate memory.\n");
-    return (void *) (intptr_t) addr;
-}
-
 static EFI_HANDLE *
 locate_handle (EFI_LOCATE_SEARCH_TYPE search_type,
                EFI_GUID *protocol, void *search_key, UINTN *num_handles)

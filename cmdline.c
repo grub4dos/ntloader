@@ -63,7 +63,6 @@ static struct nt_args args =
     .diskid = { 0 },
     .partmap = 0x01,
 
-    .initrd_path = "\\initrd.cpio",
     .initrd_pathw = L"\\initrd.cpio",
     .bcd = NULL,
     .bcd_length = 0,
@@ -286,13 +285,12 @@ void process_cmdline (char *cmdline)
         {
             if (! value || ! value[0])
                 die ("Argument \"%s\" needs a value\n", "initrd");
-            else
-            {
-                snprintf (args.initrd_path, MAX_PATH + 1, "%s", value);
-                convert_path (args.initrd_path, 1);
-                utf8_to_ucs2 (args.initrd_pathw, MAX_PATH + 1,
-                              (uint8_t *) args.initrd_path);
-            }
+
+            char initrd_path[MAX_PATH + 1];
+            snprintf (initrd_path, MAX_PATH + 1, "%s", value);
+            convert_path (initrd_path, 1);
+            utf8_to_ucs2 (args.initrd_pathw, MAX_PATH + 1,
+                          (uint8_t *) initrd_path);
         }
         else
         {

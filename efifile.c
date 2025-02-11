@@ -54,60 +54,105 @@ static struct
 };
 
 /**
+ * Extract files from ESP partition
+ *
+ * @v len		Initrd length
+ * @v handle		Device handle
+ * @ret ptr		Return initrd pointer
+ */
+static void *
+efi_load_sfs_initrd (UINTN *len, EFI_HANDLE handle)
+{
+    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
+    EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *fs;
+    EFI_FILE_PROTOCOL *root;
+    EFI_FILE_PROTOCOL *file;
+    UINT64 size;
+    void *initrd;
+    EFI_STATUS efirc;
+
+    /* Open file system */
+    efirc = bs->OpenProtocol (handle,
+                              &efi_simple_file_system_protocol_guid,
+                              (void *)&fs, efi_image_handle, NULL,
+                              EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+    if (efirc != EFI_SUCCESS)
+        die ("Could not open simple file system.\n");
+
+    /* Open root directory */
+    efirc = fs->OpenVolume (fs, &root);
+    if (efirc != EFI_SUCCESS)
+        die ("Could not open root directory.\n");
+
+    /* Close file system */
+    bs->CloseProtocol (handle, &efi_simple_file_system_protocol_guid,
+                       efi_image_handle, NULL);
+
+    efirc = root->Open (root, &file, nt_cmdline->initrd_pathw,
+                        EFI_FILE_MODE_READ, 0);
+    if (efirc != EFI_SUCCESS)
+        die ("Could not open %ls.\n", nt_cmdline->initrd_pathw);
+    file->SetPosition (file, 0xFFFFFFFFFFFFFFFF);
+    file->GetPosition (file, &size);
+    file->SetPosition (file, 0);
+    if (!size)
+        die ("Could not get initrd size\n");
+    DBG ("...found %ls size 0x%llx\n",
+         nt_cmdline->initrd_pathw, size);
+    *len = size;
+    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len));
+    efirc = file->Read (file, len, initrd);
+    if (efirc != EFI_SUCCESS)
+        die ("Could not read from file.\n");
+
+    return initrd;
+}
+
+/**
  * Extract files from Linux initrd media
  *
- * @ret rc		Return status code
+ * @v len		Initrd length
+ * @ret ptr		Return initrd pointer
  */
-static int
-efi_load_lf2_initrd (void)
+static void *
+efi_load_lf2_initrd (UINTN *len)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
     EFI_HANDLE lf2_handle;
     EFI_LOAD_FILE2_PROTOCOL *lf2;
-    EFI_DEVICE_PATH_PROTOCOL *dp = (EFI_DEVICE_PATH_PROTOCOL *) &efi_initrd_path;
-    UINTN initrd_len = 0;
-    UINTN pages;
+    EFI_DEVICE_PATH_PROTOCOL *dp =
+        (EFI_DEVICE_PATH_PROTOCOL *) &efi_initrd_path;
     void *initrd;
-    EFI_PHYSICAL_ADDRESS phys;
     EFI_STATUS efirc;
 
     /* Locate initrd media device */
     efirc = bs->LocateDevicePath (&efi_load_file2_protocol_guid,
-                                   &dp, &lf2_handle);
+                                  &dp, &lf2_handle);
     if (efirc != EFI_SUCCESS)
-        return -1;
+        return NULL;
     DBG ("...found initrd media device\n");
 
     /* Get LoadFile2 protocol */
-    efirc = bs->HandleProtocol (lf2_handle, &efi_load_file2_protocol_guid,
-                                 (void **) &lf2);
+    efirc = bs->HandleProtocol (lf2_handle,
+                                &efi_load_file2_protocol_guid,
+                                (void **) &lf2);
     if (efirc != EFI_SUCCESS)
         die ("Could not get LoadFile2 protocol.\n");
 
     /* Get initrd size */
-    efirc = lf2->LoadFile (lf2, dp, FALSE, &initrd_len, NULL);
-    if (initrd_len == 0)
+    efirc = lf2->LoadFile (lf2, dp, FALSE, len, NULL);
+    if (*len == 0)
         die ("Could not get initrd size\n");
 
     /* Allocate memory */
-    pages = ((initrd_len + PAGE_SIZE - 1) / PAGE_SIZE);
-    if ((efirc = bs->AllocatePages (AllocateAnyPages,
-                                       EfiLoaderData, pages,
-                                       &phys)) != 0)
-    {
-        die ("Could not allocate %ld pages: %#lx\n",
-              ((unsigned long) pages), ((unsigned long) efirc));
-    }
-    initrd = ((void *) (intptr_t) phys);
+    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len));
 
     /* Read initrd */
-    efirc = lf2->LoadFile (lf2, dp, FALSE, &initrd_len, initrd);
+    efirc = lf2->LoadFile (lf2, dp, FALSE, len, initrd);
     if (efirc != EFI_SUCCESS)
         die ("Could not read initrd.\n");
 
-    extract_initrd (initrd, initrd_len);
-
-    return 0;
+    return initrd;
 }
 
 /**
@@ -115,9 +160,18 @@ efi_load_lf2_initrd (void)
  *
  * @v handle		Device handle
  */
-void efi_extract (EFI_HANDLE handle __unused)
+void efi_extract (EFI_HANDLE handle)
 {
+    UINTN initrd_len = 0;
+    void *initrd;
     /* Extract files from initrd media */
-    if (efi_load_lf2_initrd () != 0)
+    initrd = efi_load_lf2_initrd (&initrd_len);
+
+    if (initrd == NULL)
+        initrd = efi_load_sfs_initrd (&initrd_len, handle);
+
+    if (initrd == NULL)
         die ("Could not load initrd\n");
+
+    extract_initrd (initrd, initrd_len);
 }

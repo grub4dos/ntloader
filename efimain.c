@@ -33,11 +33,7 @@
 #include "efiboot.h"
 #include "efidisk.h"
 #include "bcd.h"
-#include "efi/Protocol/BlockIo.h"
-#include "efi/Protocol/DevicePath.h"
 #include "efi/Protocol/LoadedImage.h"
-#include "efi/Protocol/SimpleFileSystem.h"
-#include "efi/Protocol/LoadFile2.h"
 
 /** SBAT section attributes */
 #define __sbat __attribute__ ((section (".sbat"), aligned (512)))
@@ -59,26 +55,6 @@
 
 /** SBAT metadata (with no terminating NUL) */
 const char sbat[ sizeof (SBAT_CSV) - 1 ] __sbat = SBAT_CSV;
-
-/** Block I/O protocol GUID */
-EFI_GUID efi_block_io_protocol_guid
-= EFI_BLOCK_IO_PROTOCOL_GUID;
-
-/** Device path protocol GUID */
-EFI_GUID efi_device_path_protocol_guid
-= EFI_DEVICE_PATH_PROTOCOL_GUID;
-
-/** Loaded image protocol GUID */
-EFI_GUID efi_loaded_image_protocol_guid
-= EFI_LOADED_IMAGE_PROTOCOL_GUID;
-
-/** Simple file system protocol GUID */
-EFI_GUID efi_simple_file_system_protocol_guid
-= EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
-
-/** Load File 2 protocol GUID */
-EFI_GUID efi_load_file2_protocol_guid
-= EFI_LOAD_FILE2_PROTOCOL_GUID;
 
 /**
  * Process command line
@@ -106,7 +82,7 @@ static void efi_cmdline (EFI_LOADED_IMAGE_PROTOCOL *loaded)
  * @ret efirc		EFI status code
  */
 EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,
-                             EFI_SYSTEM_TABLE *systab)
+                            EFI_SYSTEM_TABLE *systab)
 {
     EFI_BOOT_SERVICES *bs;
     union
@@ -130,10 +106,12 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,
     printf ("\n\nntloader " VERSION "\n\n");
 
     /* Get loaded image protocol */
-    if ((efirc = bs->OpenProtocol (image_handle,
-                                      &efi_loaded_image_protocol_guid,
-                                      &loaded.interface, image_handle, NULL,
-                                      EFI_OPEN_PROTOCOL_GET_PROTOCOL))!=0)
+    efirc = bs->OpenProtocol (image_handle,
+                              &efi_loaded_image_protocol_guid,
+                              &loaded.interface,
+                              image_handle, NULL,
+                              EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+    if (efirc != 0)
     {
         die ("Could not open loaded image protocol: %#lx\n",
               ((unsigned long) efirc));
