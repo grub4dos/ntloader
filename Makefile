@@ -291,10 +291,10 @@ initrd.cpio : mkinitrd
 # fsuuid
 
 fsuuid.exe : utils/fsuuid.c
-	$(HOST_MINGW_CC) $(HOST_CFLAGS) -idirafter include/ $< -o $@
+	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
 
 fsuuid : utils/fsuuid.c
-	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ $< -o $@
+	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
 
 ###############################################################################
 #
