@@ -1,0 +1,56 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Install packages
+        run: |
+          sudo apt update
+          sudo apt install -y -o Acquire::Retries=50 \
+                           binutils-dev libiberty-dev zlib1g-dev gcc-mingw-w64 gcc-aarch64-linux-gnu
+      - name: Build NTloader
+        run: |
+          make
+      - name: Build initrd
+        run: |
+          make mkinitrd.exe
+          make initrd.cpio
+      - name: Build fsuuid.exe
+        run: |
+          make fsuuid.exe
+      - name: Copy files
+        run: |
+          mkdir build
+          cp ntloader build/
+          cp ntloader.i386 build/
+          cp ntloader.arm64 build/
+          cp initrd.cpio build/
+          cp fsuuid.exe build/
+          cp mkinitrd.exe build/
+          cp utils/bcd.bat build/
+      - name: Create package
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          filename: 'ntloader.zip'
+          directory: 'build'
+          path: '.'
+      - name: Delete old release
+        continue-on-error: true
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          gh release delete latest --cleanup-tag --yes
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Release
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: |
+          gh release create latest build/ntloader.zip -t "Development Build" -p
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
