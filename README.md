@@ -24,7 +24,7 @@ You can download the latest version of the binary from [GitHub Releases](https:/
 
 ## Getting Started
 
-Extract `ntloader` and `initrd.cpio` to the disk, and modify the bootloader menu to boot Windows from FAT/NTFS/exFAT partition.  
+Extract `ntloader` and `initrd.cpio` onto the disk, and modify the bootloader menu to boot Windows from a FAT/NTFS/exFAT partition.  
 
 ### GRUB 2 (>= 2.12)
 ```
@@ -71,8 +71,8 @@ menuentry "Boot Windows NT6+ on (hdx,y)" {
 
 ### GRUB 2 (< 2.12)
 
-`ntloader` and `initrd.cpio` must be placed in **the same ESP partition**.  
-In UEFI, the chainloader command should be used to load `ntloader` and pass the path of `initrd.cpio` to it.  
+`ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
+In UEFI, the chainloader command should be used to load `ntloader` and pass the path to `initrd.cpio` to it.  
 
 ```
 menuentry "Boot Windows NT6+ WIM" {
@@ -103,7 +103,7 @@ initrd /path/to/initrd.cpio
 
 ### rEFInd
 
-`ntloader` and `initrd.cpio` must be placed in **the same ESP partition**.  
+`ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
 Use the `fsuuid.exe` tool included in the archive to obtain the UUID of the partition where the WIM/VHD is located.  
 For example, if the VHD path is `D:\path\to\windows.vhd`, run
 ```bat
@@ -213,7 +213,7 @@ Boolean value, enable or disable the use of the alternative shell in safe mode. 
 ```
 exportascd=yes|no
 ```
-Boolean value, enable or disable treating the RAMDISK as a ISO in RAMDISK boot mode. Default is `no`.  
+Boolean value, enable or disable treating the RAMDISK as an ISO in RAMDISK boot mode. Default is `no`.  
 
 ### nx
 ```
@@ -229,7 +229,7 @@ Enables or disables Physical Address Extension (PAE). Default is `Default`.
 
 ### safemode
 ```
-safemode=Minimal|Network|DSRepair
+safemode=Minimal|Network|DsRepair
 ```
 Boot into safe mode if this parameter is set.  
 
@@ -250,6 +250,7 @@ Set the partition offset of the VHD/VHDX file in RAMDISK boot mode. Default is `
 loadopt=XXXXXX
 ```
 Set the load options for Windows.  
+For available options, see [Boot Options](https://www.geoffchappell.com/notes/windows/boot/editoptions.htm).  
 
 ### winload
 ```
@@ -257,7 +258,7 @@ winload=XXXXXX
 ```
 Set the path to `winload.efi` or `winload.exe`.  
 Default is `/Windows/System32/Boot/winload.efi` for WIM; otherwise, default is `/Windows/System32/winload.efi`.  
-Ntloader will automatically correct the extension of the file.  
+Ntloader will automatically correct the file extension.  
 
 ### sysroot
 ```
@@ -285,18 +286,18 @@ fsuuid /dev/sdxY
 
 ### mkinitrd
 `mkinitrd` is a tool to create the `initrd.cpio` file.  
-You can use it to create a custom initrd file with bootmgr from other Windows versions.  
+You can use it to create a custom initrd file using bootmgr from other Windows versions.  
 You can also use `cpio` to create the initrd file.  
 ```
 # Create initrd.cpio with files from rootfs directory
 mkinitrd.exe rootfs initrd.cpio
-# Create initrd.cpio using linux utils 'find' and 'cpio'
+# Create initrd.cpio using linux utilities 'find' and 'cpio'
 find * | cpio -o -H newc > ../initrd.cpio
 ```
 
 ### bcd.bat
 `bcd.bat` is a batch script to create the BCD file.  
-Do not edit it if you don't know how NTloader works.  
+Do not edit it unless you know how NTloader works.  
 
 <div style="page-break-after: always;"></div>
 
@@ -333,7 +334,7 @@ make initrd.cpio
 
 ## Licence
 
-NTloader is free, open-source software licensed under the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.txt).
+NTloader is free, open-source software licensed under the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.txt).  
 
 ## Credits
 
