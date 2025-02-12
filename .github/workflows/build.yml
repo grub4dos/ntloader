@@ -3,9 +3,28 @@ name: Build
 on: push
 
 jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run git checkout
+      uses: actions/checkout@v4
+    - name: Create PDF
+      uses: BaileyJM02/markdown-to-pdf@v1
+      with:
+        input_path: README.md
+        output_dir: build
+        build_html: false
+        table_of_contents: false
+    - name: Upload PDF
+      uses: actions/upload-artifact@v4
+      with:
+        name: README.pdf
+        path: build/README.pdf
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: generate-docs
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -26,7 +45,7 @@ jobs:
           make fsuuid.exe
       - name: Copy files
         run: |
-          mkdir build
+          mkdir -p build
           cp ntloader build/
           cp ntloader.i386 build/
           cp ntloader.arm64 build/
@@ -34,6 +53,11 @@ jobs:
           cp fsuuid.exe build/
           cp mkinitrd.exe build/
           cp utils/bcd.bat build/
+      - name: Download README.pdf
+        uses: actions/download-artifact@v4
+        with:
+          name: README.pdf
+          path: build
       - name: Create package
         uses: thedoctor0/zip-release@master
         with:
