@@ -20,10 +20,6 @@ It is recommended to use GRUB2 (>=2.12) and GRUB4DOS to boot NTloader.
 The source code is maintained in a git repository at https://github.com/grub4dos/ntloader.  
 You can download the latest version of the binary from [GitHub Releases](https://github.com/grub4dos/ntloader/releases).  
 
-## Licence
-
-NTloader is free, open-source software licensed under the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.txt).
-
 <div style="page-break-after: always;"></div>
 
 ## Getting Started
@@ -124,6 +120,220 @@ menuentry "Boot Windows NT6+ VHD/VHDx" {
 ```
 
 <div style="page-break-after: always;"></div>
+
+## Kernel parameters
+
+Boolean values can be expressed as `yes` and `no`, `true` and `false`, `on` and `off`, or `1` and `0`.  
+Spaces in file paths should be replaced with `:`.  
+Slashes in file paths are automatically converted to backslashes.  
+
+### uuid
+```
+uuid=XXXXXXXX
+```
+The filesystem UUID of the partition where the WIM/VHD is located.  
+
+### initrd
+```
+initrd=/path/to/initrd.cpio
+```
+The path to the initrd file when booting with GRUB2 (<2.12) under UEFI.  
+Must be in the same ESP partition with `ntloader`.  
+
+### wim
+```
+wim=/path/to/winpe.wim
+```
+The path to the WIM file.  
+
+### vhd
+```
+vhd=/path/to/windows.vhd
+```
+The path to the VHD/VHDX file.  
+
+### ram
+```
+ram=/path/to/ramos.vhd
+```
+The path to the VHD/VHDX file for RAMDISK boot.  
+
+### file
+```
+file=/path/to/xxx.wim
+file=/path/to/xxx.vhd
+```
+The path to the WIM/VHD/VHDX file. Bootloader will automatically detect the file type.  
+
+### testmode
+```
+testmode=yes|no
+```
+Boolean value, enable or disable test signing mode. Default is `no`.  
+
+### hires
+```
+hires=yes|no
+```
+Boolean value, enable or disable forced highest resolution.  
+Default is "yes" for WIM files; otherwise, default is "no".  
+
+### detecthal
+```
+detecthal=yes|no
+```
+Boolean value, enable or disable HAL detection. Default is `yes`.  
+
+### minint
+```
+minint=yes|no
+```
+Boolean value, enable or disable WINPE mode.  
+Default is `yes` for WIM files; otherwise, default is `no`.  
+
+### novga
+```
+novga=yes|no
+```
+Boolean value, enable or disable the use of VGA modes entirely. Default is `no`.  
+
+### novesa
+```
+novesa=yes|no
+```
+Boolean value, enable or disable the use of VESA modes entirely. Default is `no`.  
+
+### altshell
+```
+altshell=yes|no
+```
+Boolean value, enable or disable the use of the alternative shell in safe mode. Default is `no`.  
+
+### exportascd
+```
+exportascd=yes|no
+```
+Boolean value, enable or disable treating the RAMDISK as a ISO in RAMDISK boot mode. Default is `no`.  
+
+### nx
+```
+nx=OptIn|OptOut|AlwaysOff|AlwaysOn
+```
+Set the Data Execution Prevention (DEP) policy. Default is `OptIn`.  
+
+### pae
+```
+pae=Default|Enable|Disable
+```
+Enables or disables Physical Address Extension (PAE). Default is `Default`.
+
+### safemode
+```
+safemode=Minimal|Network|DSRepair
+```
+Boot into safe mode if this parameter is set.  
+
+### gfxmode
+```
+gfxmode=1024x768|800x600|1024x600
+```
+Set the graphics resolution.  
+
+### imgofs
+```
+imgofs=XXXXXX
+```
+Set the partition offset of the VHD/VHDX file in RAMDISK boot mode. Default is `65536`.  
+
+### loadopt
+```
+loadopt=XXXXXX
+```
+Set the load options for Windows.  
+
+### winload
+```
+winload=XXXXXX
+```
+Set the path to `winload.efi` or `winload.exe`.  
+Default is `/Windows/System32/Boot/winload.efi` for WIM; otherwise, default is `/Windows/System32/winload.efi`.  
+Ntloader will automatically correct the extension of the file.  
+
+### sysroot
+```
+sysroot=XXXXXX
+```
+Set the path to the system root directory. Default is `/Windows`.  
+
+<div style="page-break-after: always;"></div>
+
+## Utilities
+
+### fsuuid
+`fsuuid` is a tool to obtain the UUID of the partition where the WIM/VHD is located.  
+Useful for rEFInd and other bootloaders that do not support retrieving the filesystem UUID.  
+```
+# Get the UUID by drive letter (Windows)
+fsuuid.exe D
+# Get the UUID by volume path (Windows)
+fsuuid.exe \\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+# List all volume paths (Windows)
+fsuuid.exe -l
+# Get the UUID by device path (Linux)
+fsuuid /dev/sdxY
+```
+
+### mkinitrd
+`mkinitrd` is a tool to create the `initrd.cpio` file.  
+You can use it to create a custom initrd file with bootmgr from other Windows versions.  
+You can also use `cpio` to create the initrd file.  
+```
+# Create initrd.cpio with files from rootfs directory
+mkinitrd.exe rootfs initrd.cpio
+# Create initrd.cpio using linux utils 'find' and 'cpio'
+find * | cpio -o -H newc > ../initrd.cpio
+```
+
+### bcd.bat
+`bcd.bat` is a batch script to create the BCD file.  
+Do not edit it if you don't know how NTloader works.  
+
+<div style="page-break-after: always;"></div>
+
+## Compilation
+
+gcc, gcc-mingw-w64 and gcc-aarch64-linux-gnu are required to compile NTloader.  
+
+### Compile NTloader
+```
+# Build everything
+make
+# Build arm64 binary only
+make ntloader.arm64
+```
+
+### Compile fsuuid
+```
+make fsuuid
+make fsuuid.exe
+```
+
+### Compile mkinitrd
+```
+make mkinitrd
+make mkinitrd.exe
+```
+
+### Build initrd.cpio
+```
+make initrd.cpio
+```
+
+<div style="page-break-after: always;"></div>
+
+## Licence
+
+NTloader is free, open-source software licensed under the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.txt).
 
 ## Credits
 
