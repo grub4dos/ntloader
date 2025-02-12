@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y -o Acquire::Retries=50 \
-                           binutils-dev libiberty-dev zlib1g-dev gcc-mingw-w64 gcc-aarch64-linux-gnu
+                           build-essential gcc-mingw-w64 gcc-aarch64-linux-gnu
       - name: Build NTloader
         run: |
           make
