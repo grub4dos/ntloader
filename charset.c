@@ -16,7 +16,7 @@
  *  along with ntloader.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <charset.h>
+#include "charset.h"
 
 static inline int
 is_utf8_trailing_octet (uint8_t c)

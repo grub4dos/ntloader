@@ -20,6 +20,7 @@
 #define _CHARSET_H 1
 
 #include <stdint.h>
+#include <stddef.h>
 
 uint16_t *
 utf8_to_ucs2 (uint16_t *dest, size_t destsize, const uint8_t *src);
