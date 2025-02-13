@@ -21,8 +21,18 @@
 #include <stddef.h>
 #include <string.h>
 #include <wchar.h>
+#ifndef NTLOADER_UTIL
 #include "ntloader.h"
+#endif
 #include "reg.h"
+
+#ifdef NTLOADER_UTIL
+#define DBG(...) \
+do \
+{ \
+    fprintf (stderr, __VA_ARGS__); \
+} while (0)
+#endif
 
 enum reg_bool
 {
