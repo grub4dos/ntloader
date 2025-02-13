@@ -123,7 +123,7 @@ union volume_boot_record
   struct ntfs_bpb ntfs;
 } __attribute__ ((packed));
 
-#ifdef WIMBOOT_VERSION
+#ifndef NTLOADER_UTIL
 extern int check_fsuuid (void *disk, uint64_t lba, int (*disk_read)
               (void *disk, uint64_t sector, size_t len, void *buf));
 #endif

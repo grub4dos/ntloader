@@ -93,7 +93,7 @@ OBJCOPY_arm64	?= $(CROSS_arm64)$(OBJCOPY)
 
 # Build flags for host binaries
 #
-HOST_CFLAGS	+= -Wall -W -Werror
+HOST_CFLAGS	+= -Wall -W -Werror -DNTLOADER_UTIL
 
 # Build flags for all targets
 #

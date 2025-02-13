@@ -72,8 +72,10 @@ struct cpio_header
 /** CPIO trailer */
 #define CPIO_TRAILER "TRAILER!!!"
 
+#ifndef NTLOADER_UTIL
 extern int
 cpio_extract (void *data, size_t len,
               int (* file) (const char *name, void *data, size_t len));
+#endif
 
 #endif /* _CPIO_H */
