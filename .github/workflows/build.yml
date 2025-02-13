@@ -9,7 +9,7 @@ jobs:
     - name: Run git checkout
       uses: actions/checkout@v4
     - name: Create PDF
-      uses: BaileyJM02/markdown-to-pdf@v1
+      uses: BaileyJM02/markdown-to-pdf@v2
       with:
         input_path: README.md
         output_dir: build
