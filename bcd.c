@@ -192,7 +192,10 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     }
 
     /* os device */
-    data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
+    if (nt_cmdline->fsuuid[0])
+        data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
+    else
+        data[ofs + 0x00] = 0x05;
     data[ofs + 0x08] = 0x48;
     memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
     data[ofs + 0x24] = nt_cmdline->partmap;
