@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include "ntloader.h"
 #include "cmdline.h"
+#include "charset.h"
 #include "efi.h"
 #include "efifile.h"
 #include "efiblock.h"
@@ -55,14 +56,16 @@ const char sbat[ sizeof (SBAT_CSV) - 1 ] __sbat = SBAT_CSV;
 static void efi_cmdline (EFI_LOADED_IMAGE_PROTOCOL *loaded)
 {
     size_t cmdline_len = (loaded->LoadOptionsSize / sizeof (wchar_t));
-    char cmdline[ cmdline_len + 1 /* NUL */ ];
-    const wchar_t *wcmdline = loaded->LoadOptions;
+    char *cmdline = efi_malloc (4 * cmdline_len + 1);
 
     /* Convert command line to ASCII */
-    snprintf (cmdline, sizeof (cmdline), "%ls", wcmdline);
+    *ucs2_to_utf8 ((uint8_t *) cmdline,
+                   loaded->LoadOptions, cmdline_len) = 0;
 
     /* Process command line */
     process_cmdline (cmdline);
+
+    efi_free (cmdline);
 }
 
 /**
