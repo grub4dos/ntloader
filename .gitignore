@@ -9,6 +9,8 @@ ntloader
 *.cab
 elf2efi32
 elf2efi64
+regview
+regview.exe
 fsuuid
 fsuuid.exe
 mkinitrd

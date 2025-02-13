@@ -93,7 +93,7 @@ OBJCOPY_arm64	?= $(CROSS_arm64)$(OBJCOPY)
 
 # Build flags for host binaries
 #
-HOST_CFLAGS	+= -Wall -W -Werror -DNTLOADER_UTIL
+HOST_CFLAGS	+= -Wall -W -Werror -fshort-wchar -DNTLOADER_UTIL
 
 # Build flags for all targets
 #
@@ -298,11 +298,22 @@ fsuuid : utils/fsuuid.c
 
 ###############################################################################
 #
+# regview
+
+regview.exe : utils/regview.c
+	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ reg.c charset.c $< -o $@
+
+regview : utils/regview.c
+	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ reg.c charset.c $< -o $@
+
+###############################################################################
+#
 # Cleanup
 
 clean :
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f elf2efi32 elf2efi64
+	$(RM) -f regview regview.exe
 	$(RM) -f fsuuid fsuuid.exe
 	$(RM) -f mkinitrd mkinitrd.exe
 	$(RM) -f initrd.cpio
