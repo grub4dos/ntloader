@@ -273,6 +273,7 @@ Set the path to the system root directory. Default is `/Windows`.
 ### fsuuid
 `fsuuid` is a tool to obtain the UUID of the partition where the WIM/VHD is located.  
 Useful for rEFInd and other bootloaders that do not support retrieving the filesystem UUID.  
+:warning: Administrator privileges are required.  
 ```
 # Get the UUID by drive letter (Windows)
 fsuuid.exe D
@@ -298,6 +299,7 @@ find * | cpio -o -H newc > ../initrd.cpio
 ### bcd.bat
 `bcd.bat` is a batch script to create the BCD file.  
 Do not edit it unless you know how NTloader works.  
+:warning: Administrator privileges are required.  
 
 <div style="page-break-after: always;"></div>
 
