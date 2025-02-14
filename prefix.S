@@ -90,7 +90,7 @@ header:
 
 	.org	0x206
 version:
-	.word	0x203	/* Version 2.03 */
+	.word	0x206	/* Version 2.06 */
 
 	.org	0x20e
 kernel_version:
@@ -115,6 +115,10 @@ cmd_line_ptr:
 	.org	0x22c
 ramdisk_max:
 	.long	0xffffffff
+
+	.org	0x238
+cmdline_size:
+	.long	4096
 
 version_string:
 	.asciz	VERSION

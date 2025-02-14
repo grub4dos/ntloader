@@ -123,6 +123,7 @@ menuentry "Boot Windows NT6+ VHD/VHDx" {
 
 ## Kernel parameters
 
+The maximum size of the command line without the terminating zero is 4096 bytes.  
 Boolean values can be expressed as `yes` and `no`, `true` and `false`, `on` and `off`, or `1` and `0`.  
 Spaces in file paths should be replaced with `:`.  
 Slashes in file paths are automatically converted to backslashes.  
