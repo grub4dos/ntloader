@@ -1,5 +1,24 @@
 ENTRY ( efi_main )
 
+/* x86 Memory Map
+ * start		end			size		description	type
+ * 640 KiB		Low memory
+ * 0x00000000	0x000003FF	1 KiB		IVT
+ * 0x00000400	0x000004FF	256 bytes	BDA
+ * 0x00000500	0x00007BFF	29.75 KiB	Conventional memory
+ * 0x00007C00	0x00007DFF	512 bytes	BootSector
+ * 0x00007E00	0x0007FFFF	480.5 KiB	Conventional memory
+ * 0x00080000	0x0009FFFF	~128 KiB	EBDA
+ * 384 KiB		Upper Memory
+ * 0x000A0000	0x000BFFFF	128 KiB		Video display memory
+ * 0x000C0000	0x000C7FFF	~32 KiB		Video BIOS
+ * 0x000C8000	0x000EFFFF	~160 KiB	BIOS Expansions
+ * 0x000F0000	0x000FFFFF	64 KiB		Motherboard BIOS
+ * > 1 MiB		High Memory
+ * 0x00100000	0x00EFFFFF	14 MiB		Extended memory
+ * 0x00F00000	0x00FFFFFF	1 MiB		ISA Memory Hole
+ */
+
 SECTIONS {
 
 	/* Align sections to allow for page-level runtime protection */
@@ -17,6 +36,9 @@ SECTIONS {
 	 */
 	_forbidden_start = 0x30000;
 	_forbidden_end = 0x40000;
+
+	/* Extended BIOS Data Area */
+	_ebda_start = 0x80000;
 
 	/* bzImage prefix */
 	_prefix_pos = 0;
@@ -72,12 +94,14 @@ SECTIONS {
 		*.i386.*(.text)
 		*.i386.*(.text.*)
 		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _forbidden_start ),
-			 "Binary is too large" );
+			 "Binary is too large (overlap the bootmgr buffer)" );
 		*(.text)
 		*(.text.*)
 		. = ALIGN ( alignment );
 		_epayload = .;
 		_etext = .;
+		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _ebda_start ),
+			 "Binary is too large (overlap the EBDA)" );
 	}
 	_text_len = ABSOLUTE ( _etext ) - ABSOLUTE ( _text );
 	_payload_len = ABSOLUTE ( _epayload ) - ABSOLUTE ( _payload );
@@ -93,6 +117,8 @@ SECTIONS {
 		*(.stack.*)
 		. = ALIGN ( alignment );
 		_ebss = .;
+		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _ebda_start ),
+			 "Binary is too large (overlap the EBDA)" );
 	}
 	_bss_len = ABSOLUTE ( _ebss ) - ABSOLUTE ( _bss );
 
@@ -103,6 +129,8 @@ SECTIONS {
 		*(.sbat)
 		*(.sbat.*)
 		_esbat = .;
+		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _ebda_start ),
+			 "Binary is too large (overlap the EBDA)" );
 	}
 	_sbat_len = ABSOLUTE ( _esbat ) - ABSOLUTE ( _sbat );
 
