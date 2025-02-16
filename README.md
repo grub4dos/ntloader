@@ -72,7 +72,8 @@ menuentry "Boot Windows NT6+ on (hdx,y)" {
 ### GRUB 2 (< 2.12)
 
 `ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
-In UEFI, the chainloader command should be used to load `ntloader` and pass the path to `initrd.cpio` to it.  
+In UEFI, the `chainloader` command should be used to load `ntloader` and pass the path to `initrd.cpio` to it.  
+:warning: GRUB 2 cannot properly handle command lines containing non-ASCII characters, so file names must not include non-ASCII characters.  
 
 ```
 menuentry "Boot Windows NT6+ WIM" {
@@ -90,7 +91,7 @@ menuentry "Boot Windows NT6+ WIM" {
 
 ### GRUB4DOS / GRUB4EFI
 
-Use the kernel command to load `ntloader`.
+Use the `kernel` command to load `ntloader`.
 
 ```
 title Boot Windows NT6+ WIM
