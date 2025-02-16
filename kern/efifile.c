@@ -23,6 +23,7 @@
 #include "ntloader.h"
 #include "vdisk.h"
 #include "cmdline.h"
+#include "charset.h"
 #include "payload.h"
 #include "efi.h"
 #include "efifile.h"
@@ -62,6 +63,10 @@ efi_load_sfs_initrd (UINTN *len, EFI_HANDLE handle)
     UINT64 size;
     void *initrd;
     EFI_STATUS efirc;
+    wchar_t wpath[MAX_PATH + 1];
+
+    *utf8_to_ucs2 (wpath, MAX_PATH + 1,
+                   (uint8_t *) nt_cmdline->initrd_path) = L'\0';
 
     /* Open file system */
     efirc = bs->OpenProtocol (handle,
@@ -80,17 +85,15 @@ efi_load_sfs_initrd (UINTN *len, EFI_HANDLE handle)
     bs->CloseProtocol (handle, &efi_simple_file_system_protocol_guid,
                        efi_image_handle, NULL);
 
-    efirc = root->Open (root, &file, nt_cmdline->initrd_pathw,
-                        EFI_FILE_MODE_READ, 0);
+    efirc = root->Open (root, &file, wpath, EFI_FILE_MODE_READ, 0);
     if (efirc != EFI_SUCCESS)
-        die ("Could not open %ls.\n", nt_cmdline->initrd_pathw);
+        die ("Could not open %ls.\n", wpath);
     file->SetPosition (file, 0xFFFFFFFFFFFFFFFF);
     file->GetPosition (file, &size);
     file->SetPosition (file, 0);
     if (!size)
-        die ("Could not get initrd size\n");
-    DBG ("...found %ls size 0x%llx\n",
-         nt_cmdline->initrd_pathw, size);
+        die ("Could not get file size\n");
+    DBG ("...found %ls size 0x%llx\n", wpath, size);
     *len = size;
     initrd = efi_allocate_pages (BYTES_TO_PAGES (*len));
     efirc = file->Read (file, len, initrd);

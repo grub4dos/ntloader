@@ -26,7 +26,6 @@
 #include "ntloader.h"
 #include "cmdline.h"
 #include "bcd.h"
-#include "charset.h"
 
 static struct nt_args args =
 {
@@ -57,7 +56,7 @@ static struct nt_args args =
     .diskid = { 0 },
     .partmap = 0x01,
 
-    .initrd_pathw = L"\\initrd.cpio",
+    .initrd_path = "\\initrd.cpio",
     .bcd = NULL,
     .bcd_length = 0,
     .bootmgr = NULL,
@@ -295,11 +294,8 @@ void process_cmdline (char *cmdline)
             if (! value || ! value[0])
                 die ("Argument \"%s\" needs a value\n", "initrd");
 
-            char initrd_path[MAX_PATH + 1];
-            snprintf (initrd_path, MAX_PATH + 1, "%s", value);
-            convert_path (initrd_path, 1);
-            utf8_to_ucs2 (args.initrd_pathw, MAX_PATH + 1,
-                          (uint8_t *) initrd_path);
+            snprintf (args.initrd_path, MAX_PATH + 1, "%s", value);
+            convert_path (args.initrd_path, 1);
         }
         else
         {

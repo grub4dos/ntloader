@@ -69,7 +69,6 @@ struct nt_args
     char filepath[MAX_PATH + 1];
 
     char initrd_path[MAX_PATH + 1];
-    wchar_t initrd_pathw[MAX_PATH + 1];
     void *bcd;
     uint32_t bcd_length;
     void *bootmgr;
