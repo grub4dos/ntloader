@@ -278,6 +278,8 @@ bcd_patch_data (void)
     /* Patch Objects->{Ramdisk} */
     if (nt_cmdline->boottype == NTBOOT_RAM)
     {
+        bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_SDIDEV);
+        bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_SDIPATH);
         bcd_patch_bool (&hive, objects, GUID_RAMDISK,
                         BCDOPT_EXPORTCD, nt_cmdline->exportcd);
         bcd_patch_u64 (&hive, objects, GUID_RAMDISK,

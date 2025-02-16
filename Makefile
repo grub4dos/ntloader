@@ -1,6 +1,6 @@
 # Versioning information
 #
-VERSION := v3.0.2
+VERSION := v3.0.3
 WIMBOOT_VERSION := v2.8.0
 SBAT_GENERATION := 1
 
