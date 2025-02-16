@@ -69,6 +69,24 @@ bcd_find_hive (hive_t *hive, HKEY objects,
     return data;
 }
 
+static void
+bcd_delete_key (hive_t *hive, HKEY objects,
+                const wchar_t *guid, const wchar_t *keyname)
+{
+    HKEY entry, elements, key;
+    if (reg_find_key (hive, objects, guid, &entry) != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", guid);
+    if (reg_find_key (hive, entry, BCD_REG_HKEY, &elements)
+        != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", BCD_REG_HKEY);
+    if (reg_find_key (hive, elements, keyname, &key)
+        != REG_ERR_NONE)
+        die ("Can't find HKEY %ls\n", keyname);
+    if (reg_delete_key (hive, elements, key)
+        != REG_ERR_NONE)
+        die ("Can't delete HKEY %ls\n", keyname);
+}
+
 static inline void
 bcd_patch_bool (hive_t *hive, HKEY objects,
                 const wchar_t *guid, const wchar_t *keyname,
@@ -134,7 +152,6 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     uint8_t *data;
     uint32_t len, ofs;
     uint8_t sdi[] = GUID_BIN_RAMDISK;
-    uint8_t rdi[] = GUID_BIN_RDIMAGE;
     data = bcd_find_hive (hive, objects, guid, keyname, &len);
     memset (data, 0, len);
     switch (boottype)
@@ -145,10 +162,7 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
             if (len < 0x028a)
                 die ("WIM device path (%ls->%ls) length error (%x)\n",
                      guid, keyname, len);
-            if (boottype == NTBOOT_RAM)
-                memcpy (data + 0x0000, rdi, sizeof (rdi));
-            else
-                memcpy (data + 0x0000, sdi, sizeof (sdi));
+            memcpy (data + 0x0000, sdi, sizeof (sdi));
             data[0x0014] = 0x01;
             data[0x0018] = 0x7a; data[0x0019] = 0x02; // len - 0x10
             data[0x0020] = 0x03;
@@ -262,10 +276,18 @@ bcd_patch_data (void)
                   BCDOPT_SYSROOT, BCD_DEFAULT_HIBERFIL); // hiberfil
 
     /* Patch Objects->{Ramdisk} */
-    bcd_patch_bool (&hive, objects, GUID_RAMD,
-                    BCDOPT_EXPORTCD, nt_cmdline->exportcd);
-    bcd_patch_u64 (&hive, objects, GUID_RAMD,
-                   BCDOPT_IMGOFS, nt_cmdline->imgofs);
+    if (nt_cmdline->boottype == NTBOOT_RAM)
+    {
+        bcd_patch_bool (&hive, objects, GUID_RAMDISK,
+                        BCDOPT_EXPORTCD, nt_cmdline->exportcd);
+        bcd_patch_u64 (&hive, objects, GUID_RAMDISK,
+                       BCDOPT_IMGOFS, nt_cmdline->imgofs);
+    }
+    else
+    {
+        bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_EXPORTCD);
+        bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_IMGOFS);
+    }
 
     /* Patch Objects->{Options} */
     bcd_patch_sz (&hive, objects, GUID_OPTN,
@@ -288,29 +310,28 @@ bcd_patch_data (void)
     /* Patch Objects->{Resolution} */
     if (nt_cmdline->hires == NTARG_BOOL_NA)
     {
-        bcd_patch_szw (&hive, objects, GUID_OPTN,
-                       BCDOPT_INHERIT, GUID_LRES);
-        bcd_patch_u64 (&hive, objects, GUID_LRES,
+        bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_HIGHRES);
+        bcd_patch_u64 (&hive, objects, GUID_OPTN,
                        BCDOPT_GFXMODE, nt_cmdline->gfxmode);
     }
     else
     {
-        bcd_patch_bool (&hive, objects, GUID_HRES,
+        bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_GFXMODE);
+        bcd_patch_bool (&hive, objects, GUID_OPTN,
                         BCDOPT_HIGHRES, nt_cmdline->hires);
     }
 
-    /* Patch Objects->{SafeBoot} */
     if (nt_cmdline->safemode)
     {
-        bcd_patch_u64 (&hive, objects, GUID_SAFE,
+        bcd_patch_u64 (&hive, objects, GUID_OPTN,
                        BCDOPT_SAFEMODE, nt_cmdline->safeboot);
-        bcd_patch_bool (&hive, objects, GUID_SAFE,
+        bcd_patch_bool (&hive, objects, GUID_OPTN,
                         BCDOPT_ALTSHELL, nt_cmdline->altshell);
     }
     else
     {
-        bcd_patch_szw (&hive, objects, entry_guid,
-                       BCDOPT_INHERIT, GUID_OPTN);
+        bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_SAFEMODE);
+        bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_ALTSHELL);
     }
 
     /* Patch Objects->{Entry} */

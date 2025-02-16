@@ -180,6 +180,9 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
               wchar_t *Name, uint32_t NameLength);
 
 reg_err_t
+reg_delete_key(hive_t *h, HKEY parent, HKEY key);
+
+reg_err_t
 reg_find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key);
 
 reg_err_t

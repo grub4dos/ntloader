@@ -446,6 +446,71 @@ reg_find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key)
 }
 
 reg_err_t
+reg_delete_key(hive_t *h, HKEY parent, HKEY key)
+{
+    int32_t size;
+    CM_KEY_NODE *nk;
+    CM_KEY_FAST_INDEX *lh;
+
+    // find parent key node
+
+    size = get_int32_size (h->data, parent);
+
+    if (size < 0)
+        return REG_ERR_FILE_NOT_FOUND;
+
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE, Name[0]))
+        return REG_ERR_BAD_ARGUMENT;
+
+    nk = (CM_KEY_NODE *)((uint8_t *)h->data + parent + sizeof(int32_t));
+
+    if (nk->Signature != CM_KEY_NODE_SIGNATURE)
+        return REG_ERR_BAD_ARGUMENT;
+
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_NODE,
+        Name[0]) + nk->NameLength)
+        return REG_ERR_BAD_ARGUMENT;
+
+    if (nk->SubKeyCount == 0 || nk->SubKeyList == 0xffffffff)
+        return REG_ERR_FILE_NOT_FOUND;
+
+    // go to key index
+
+    size = get_int32_size (h->data, 0x1000 + nk->SubKeyList);
+
+    if (size < 0)
+        return REG_ERR_FILE_NOT_FOUND;
+
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX, List[0]))
+        return REG_ERR_BAD_ARGUMENT;
+
+    lh = (CM_KEY_FAST_INDEX *)((uint8_t *)h->data + 0x1000
+    + nk->SubKeyList + sizeof(int32_t));
+
+    if (lh->Signature != CM_KEY_HASH_LEAF && lh->Signature != CM_KEY_FAST_LEAF)
+        return REG_ERR_BAD_ARGUMENT;
+
+    if ((uint32_t)size < sizeof(int32_t) + offsetof(CM_KEY_FAST_INDEX,
+        List[0]) + (lh->Count * sizeof(CM_INDEX)))
+        return REG_ERR_BAD_ARGUMENT;
+
+    for (unsigned int i = 0; i < lh->Count; i++)
+    {
+        // key = 0x1000 + lh->List[i].Cell;
+        if (key != 0x1000 + lh->List[i].Cell)
+            continue;
+        lh->Count--;
+        for (unsigned j = i; j < lh->Count; j++)
+            memcpy (&lh->List[j].Cell, &lh->List[j + 1].Cell,
+                    sizeof (CM_INDEX));
+        nk->SubKeyCount--;
+        return REG_ERR_NONE;
+    }
+
+    return REG_ERR_FILE_NOT_FOUND;
+}
+
+reg_err_t
 reg_enum_values(hive_t *h, HKEY Key,
                 uint32_t Index, wchar_t *Name,
                 uint32_t NameLength, uint32_t *Type)

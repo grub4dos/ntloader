@@ -28,12 +28,6 @@
 #define GUID_HIBR L"{19260817-6666-8888-abcd-000000000003}"
 
 #define GUID_OPTN L"{19260817-6666-8888-abcd-100000000000}"
-#define GUID_SAFE L"{19260817-6666-8888-abcd-200000000000}"
-
-#define GUID_HRES L"{19260817-6666-8888-abcd-110000000000}"
-#define GUID_LRES L"{19260817-6666-8888-abcd-120000000000}"
-
-#define GUID_RAMD L"{19260817-6666-8888-abcd-101000000000}"
 
 #define GUID_BOOTMGR L"{9dea862c-5cdd-4e70-acc1-f32b344d4795}"
 #define GUID_RAMDISK L"{ae5534e0-a924-466c-b836-758539a3ee3a}"
@@ -46,12 +40,6 @@
     { \
         0xe0, 0x34, 0x55, 0xae, 0x24, 0xa9, 0x6c, 0x46, \
         0xb8, 0x36, 0x75, 0x85, 0x39, 0xa3, 0xee, 0x3a \
-    }
-
-#define GUID_BIN_RDIMAGE \
-    { \
-        0x17, 0x08, 0x26, 0x19, 0x66, 0x66, 0x88, 0x88, \
-        0xab, 0xcd, 0x10, 0x10, 0x00, 0x00, 0x00, 0x00 \
     }
 
 #define BCD_REG_ROOT L"Objects"
