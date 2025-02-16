@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "ntloader.h"
-#include "memmap.h"
+#include "e820.h"
 
 /** Buffer for INT 15,e820 calls */
 static struct e820_entry e820_buf __attribute__ ((section (".bss16")));

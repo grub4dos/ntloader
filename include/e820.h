@@ -1,5 +1,5 @@
-#ifndef _MEMMAP_H
-#define _MEMMAP_H
+#ifndef _E820_H
+#define _E820_H
 
 /*
  * Copyright (C) 2021 Michael Brown <mbrown@fensystems.co.uk>.
@@ -56,4 +56,4 @@ struct e820_entry
 
 extern struct e820_entry *memmap_next (struct e820_entry *prev);
 
-#endif /* _MEMMAP_H */
+#endif /* _E820_H */

@@ -29,7 +29,7 @@
 #include <string.h>
 #include <assert.h>
 #include "ntloader.h"
-#include "memmap.h"
+#include "e820.h"
 #include "paging.h"
 
 #if defined(__i386__) || defined(__x86_64__)

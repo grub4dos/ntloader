@@ -29,7 +29,7 @@
 #include "payload.h"
 #include "cmdline.h"
 #include "paging.h"
-#include "memmap.h"
+#include "e820.h"
 #include "biosdisk.h"
 
 /** Start of our image (defined by linker) */

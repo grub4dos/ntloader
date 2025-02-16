@@ -1,17 +1,12 @@
 # Versioning information
 #
-VERSION := v3.0.3
+VERSION := v3.0.4
 WIMBOOT_VERSION := v2.8.0
 SBAT_GENERATION := 1
 
 # Abstract target-independent objects
 #
-OBJECTS := prefix.o startup.o callback.o main.o vsprintf.o string.o peloader.o
-OBJECTS += int13.o vdisk.o cpio.o stdio.o die.o efi.o efimain.o
-OBJECTS += efifile.o efiboot.o efiblock.o cmdline.o
-OBJECTS += cookie.o paging.o memmap.o
-OBJECTS += reg.o charset.o bcd.o fsuuid.o gpt.o msdos.o
-OBJECTS += biosdisk.o efidisk.o payload.o
+OBJECTS := prefix.o
 
 # Target-dependent objects
 #
@@ -19,6 +14,11 @@ OBJECTS_i386 := $(patsubst %.o,%.i386.o,$(OBJECTS))
 OBJECTS_x86_64 := $(patsubst %.o,%.x86_64.o,$(OBJECTS))
 OBJECTS_i386_x86_64 := $(patsubst %.o,%.i386.x86_64.o,$(OBJECTS))
 OBJECTS_arm64 := $(patsubst %.o,%.arm64.o,$(OBJECTS))
+
+include posix/build.mk
+include libnt/build.mk
+include disk/build.mk
+include kern/build.mk
 
 # Header files
 #
@@ -311,6 +311,7 @@ regview : utils/regview.c
 # Cleanup
 
 clean :
+	$(RM) -f $(RM_FILES)
 	$(RM) -f *.s *.o *.a *.elf *.map
 	$(RM) -f elf2efi32 elf2efi64
 	$(RM) -f regview regview.exe
