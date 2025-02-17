@@ -150,5 +150,6 @@ int main (int argc, char *argv[])
     else
         print_keys (&hive, root, wname, name);
 
+    free (hive.data);
     return 0;
 }
