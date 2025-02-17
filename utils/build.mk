@@ -51,3 +51,16 @@ regview : $(REG_FILES)
 	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $(REG_FILES) -o $@
 
 RM_FILES += regview regview.exe
+
+# bmtool
+#
+BMTOOL_FILES := libnt/huffman.c libnt/lznt1.c libnt/xca.c
+BMTOOL_FILES += utils/bmtool.c
+
+bmtool.exe : $(BMTOOL_FILES)
+	$(MINGW_CC) $(HOST_CFLAGS) -iquote include/ $(BMTOOL_FILES) -o $@
+
+bmtool : $(BMTOOL_FILES)
+	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $(BMTOOL_FILES) -o $@
+
+RM_FILES += bmtool bmtool.exe

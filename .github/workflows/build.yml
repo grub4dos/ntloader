@@ -47,6 +47,9 @@ jobs:
       - name: Build fsuuid.exe
         run: |
           make fsuuid.exe
+      - name: Build bmtool.exe
+        run: |
+          make bmtool.exe
       - name: Copy files
         run: |
           mkdir -p build
@@ -55,6 +58,7 @@ jobs:
           cp ntloader.arm64 build/
           cp initrd.cpio build/
           cp fsuuid.exe build/
+          cp bmtool.exe build/
           cp mkinitrd.exe build/
           cp utils/bcd.bat build/
       - name: Download README.pdf
