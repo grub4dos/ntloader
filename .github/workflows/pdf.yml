@@ -13,15 +13,20 @@ jobs:
     steps:
     - name: Run git checkout
       uses: actions/checkout@v4
+    - name: Build README.md
+      run: |
+        make -C docs
     - name: Create PDF
       uses: BaileyJM02/markdown-to-pdf@v1
       with:
-        input_path: doc
+        input_path: docs/README.md
         output_dir: build
+        images_dir: docs/images
+        image_import: ./images
         build_html: false
         table_of_contents: false
     - name: Upload PDF
       uses: actions/upload-artifact@v4
       with:
-        name: docs
-        path: build
+        name: README.pdf
+        path: build/README.pdf

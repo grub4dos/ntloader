@@ -15,7 +15,10 @@ fsuuid
 fsuuid.exe
 mkinitrd
 mkinitrd.exe
+bmtools
+bmtools.exe
 ntloader.i386
 ntloader.arm64
 ntloader.x86_64
 initrd.cpio
+docs/README.md
