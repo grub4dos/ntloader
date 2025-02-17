@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "doc"
+
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run git checkout
+      uses: actions/checkout@v4
+    - name: Create PDF
+      uses: BaileyJM02/markdown-to-pdf@v1
+      with:
+        input_path: doc
+        output_dir: build
+        build_html: false
+        table_of_contents: false
+    - name: Upload PDF
+      uses: actions/upload-artifact@v4
+      with:
+        name: docs
+        path: build
