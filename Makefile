@@ -10,19 +10,25 @@ OBJECTS := prefix.o
 
 # Target-dependent objects
 #
-OBJECTS_i386 := $(patsubst %.o,%.i386.o,$(OBJECTS))
-OBJECTS_x86_64 := $(patsubst %.o,%.x86_64.o,$(OBJECTS))
-OBJECTS_i386_x86_64 := $(patsubst %.o,%.i386.x86_64.o,$(OBJECTS))
-OBJECTS_arm64 := $(patsubst %.o,%.arm64.o,$(OBJECTS))
+OBJECTS_PCBIOS :=
+OBJECTS_i386 :=
+OBJECTS_x86_64 :=
+OBJECTS_i386_x86_64 :=
+OBJECTS_arm64 :=
 
 include posix/build.mk
 include libnt/build.mk
 include disk/build.mk
 include kern/build.mk
 
+OBJECTS_i386 += $(patsubst %.o,%.i386.o,$(OBJECTS))
+OBJECTS_x86_64 += $(patsubst %.o,%.x86_64.o,$(OBJECTS))
+OBJECTS_i386_x86_64 += $(patsubst %.o,%.i386.x86_64.o,$(OBJECTS))
+OBJECTS_arm64 += $(patsubst %.o,%.arm64.o,$(OBJECTS))
+
 # Header files
 #
-HEADERS := $(wildcard *.h)
+HEADERS := $(wildcard include/*.h)
 
 # Common build tools
 #
@@ -36,11 +42,6 @@ AS		?= as
 LD		?= ld
 AR		?= ar
 OBJCOPY		?= objcopy
-
-# Build tools for host binaries
-#
-HOST_CC		:= $(CC)
-HOST_MINGW_CC	?= i686-w64-mingw32-gcc
 
 # Get list of default compiler definitions
 #
@@ -90,10 +91,6 @@ AS_arm64	?= $(CROSS_arm64)$(AS)
 LD_arm64	?= $(CROSS_arm64)$(LD)
 AR_arm64	?= $(CROSS_arm64)$(AR)
 OBJCOPY_arm64	?= $(CROSS_arm64)$(OBJCOPY)
-
-# Build flags for host binaries
-#
-HOST_CFLAGS	+= -Wall -W -Werror -fshort-wchar -DNTLOADER_UTIL
 
 # Build flags for all targets
 #
@@ -263,48 +260,8 @@ lib.arm64.a : $(OBJECTS_arm64) Makefile
 	$(RM) -f $@
 	$(AR_arm64) -r -s $@ $(OBJECTS_arm64)
 
-###############################################################################
-#
-# EFI relocator
-
-elf2efi32 : utils/elf2efi.c Makefile
-	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ -DEFI_TARGET32 $< -o $@
-
-elf2efi64 : utils/elf2efi.c Makefile
-	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ -DEFI_TARGET64 $< -o $@
-
-###############################################################################
-#
-# Initrd rootfs
-
-mkinitrd.exe : utils/mkinitrd.c
-	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
-
-mkinitrd : utils/mkinitrd.c
-	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
-
-initrd.cpio : mkinitrd
-	./mkinitrd utils/rootfs $@
-
-###############################################################################
-#
-# fsuuid
-
-fsuuid.exe : utils/fsuuid.c
-	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
-
-fsuuid : utils/fsuuid.c
-	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $< -o $@
-
-###############################################################################
-#
-# regview
-
-regview.exe : utils/regview.c
-	$(HOST_MINGW_CC) $(HOST_CFLAGS) -iquote include/ reg.c charset.c $< -o $@
-
-regview : utils/regview.c
-	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ reg.c charset.c $< -o $@
+# Utilities
+include utils/build.mk
 
 ###############################################################################
 #
@@ -313,11 +270,6 @@ regview : utils/regview.c
 clean :
 	$(RM) -f $(RM_FILES)
 	$(RM) -f *.s *.o *.a *.elf *.map
-	$(RM) -f elf2efi32 elf2efi64
-	$(RM) -f regview regview.exe
-	$(RM) -f fsuuid fsuuid.exe
-	$(RM) -f mkinitrd mkinitrd.exe
-	$(RM) -f initrd.cpio
 	$(RM) -f ntloader.i386 ntloader.i386.*
 	$(RM) -f ntloader.x86_64 ntloader.x86_64.*
 	$(RM) -f ntloader.arm64 ntloader.arm64.*
