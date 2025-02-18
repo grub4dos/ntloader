@@ -47,9 +47,9 @@ menuentry "Boot Windows NT6+ on (hdx,y)" {
 
 ### GRUB 2 (< 2.12)
 
-`ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
 In UEFI, the `chainloader` command should be used to load `ntloader` and pass the path to `initrd.cpio` to it.  
 :warning: GRUB 2 cannot properly handle command lines containing non-ASCII characters, so file names must not include non-ASCII characters.  
+:warning: `ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
 
 ```
 menuentry "Boot Windows NT6+ WIM" {
@@ -80,13 +80,8 @@ initrd /path/to/initrd.cpio
 
 ### rEFInd
 
-`ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
-Use the `fsuuid.exe` tool included in the archive to obtain the UUID of the partition where the WIM/VHD is located.  
-For example, if the VHD path is `D:\path\to\windows.vhd`, run
-```bat
-fsuuid.exe D
-```
-to obtain the UUID of that partition, and replace `PASTE_UUID_HERE` in the menu below with the obtained UUID.  
+Use the `fsuuid.exe` tool to obtain the UUID of the partition where the WIM/VHD is located, and replace `PASTE_UUID_HERE` in the menu below with the obtained UUID.  
+:warning: `ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
 
 ```
 menuentry "Boot Windows NT6+ VHD/VHDx" {
@@ -94,6 +89,19 @@ menuentry "Boot Windows NT6+ VHD/VHDx" {
     initrd /path/to/initrd.cpio
     options "uuid=PASTE_UUID_HERE vhd=/path/to/windows.vhd"
 }
+```
+
+### limine
+
+Use the `fsuuid.exe` tool to obtain the UUID of the partition where the WIM/VHD is located, and replace `PASTE_UUID_HERE` in the menu below with the obtained UUID.  
+:warning: `ntloader` and `initrd.cpio` must be on **the same ESP partition**.  
+:warning: Only UEFI is supported.
+
+```
+/Boot Windows NT6+ VHD/VHDx
+    protocol: efi
+    path: boot():/path/to/ntloader
+    cmdline: uuid=PASTE_UUID_HERE vhd=/path/to/windows.vhd initrd=/path/to/initrd.cpio
 ```
 
 <div style="page-break-after: always;"></div>

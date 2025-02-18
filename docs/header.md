@@ -1,12 +1,22 @@
-# NTloader
+<br />
+<div align="center">
+  <h2 align="center">NTloader</h2>
+</div>
+<br />
 
 **Ntloader** is a bootloader for NT6+ WIM, VHD and VHDX images.
 
 ## Compatibility
 
 **Ntloader** supports BIOS (i386) and UEFI (i386, x86_64, arm64) environments.  
-The hybrid binary (`ntloader`) is compatible with BIOS and x86_64 UEFI. `ntloader.i386` is compatible with BIOS and i386 UEFI. `ntloader.arm64` is compatible with ARM64 UEFI.  
 It is recommended to use GRUB2 (>=2.12) or GRUB4DOS to boot NTloader.  
+
+| Platform      | ntloader | ntloader.i386 | ntloader.arm64 |
+| :------------ | :-: | :-: | :-: |
+| BIOS (i386)   | yes | yes | no  |
+| UEFI (i386)   | no  | yes | no  |
+| UEFI (x86_64) | yes | no  | no  |
+| UEFI (arm64)  | no  | no  | yes |
 
 ## Download
 
