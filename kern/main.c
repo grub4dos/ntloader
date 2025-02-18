@@ -73,11 +73,11 @@ enum
 static void call_interrupt_wrapper (struct bootapp_callback_params *params)
 {
     struct paging_state state;
+    uint16_t *attributes;
 
     /* Handle/modify/pass-through interrupt as required */
     if (params->vector.interrupt == 0x13)
     {
-
         /* Enable paging */
         enable_paging (&state);
 
@@ -86,11 +86,18 @@ static void call_interrupt_wrapper (struct bootapp_callback_params *params)
 
         /* Disable paging */
         disable_paging (&state);
-
+    }
+    else if ((params->vector.interrupt == 0x10) &&
+             (params->ax == 0x4f01) &&
+             (nt_cmdline->textmode))
+    {
+        /* Mark all VESA video modes as unsupported */
+        attributes = REAL_PTR ( params->es, params->di );
+        call_interrupt ( params );
+        *attributes &= ~0x0001;
     }
     else
     {
-
         /* Pass through interrupt */
         call_interrupt (params);
     }

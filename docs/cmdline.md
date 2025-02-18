@@ -43,6 +43,12 @@ file=/path/to/xxx.vhd
 ```
 The path to the WIM/VHD/VHDX file. Bootloader will automatically detect the file type.  
 
+### text
+```
+text
+```
+Force the Windows boot manager to display error messages in text mode.  
+
 ### testmode
 ```
 testmode=yes|no

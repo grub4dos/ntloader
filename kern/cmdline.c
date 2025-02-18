@@ -29,6 +29,7 @@
 
 static struct nt_args args =
 {
+    .textmode = NTARG_BOOL_FALSE,
     .testmode = NTARG_BOOL_FALSE,
     .hires = NTARG_BOOL_UNSET, // wim = yes
     .hal = NTARG_BOOL_TRUE,
@@ -184,6 +185,10 @@ void process_cmdline (char *cmdline)
                 args.boottype = NTBOOT_WIM;
             else
                 args.boottype = NTBOOT_VHD;
+        }
+        else if (strcmp (key, "text") == 0)
+        {
+            args.textmode = NTARG_BOOL_TRUE;
         }
         else if (strcmp (key, "testmode") == 0)
         {

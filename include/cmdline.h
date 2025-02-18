@@ -40,6 +40,7 @@
 
 struct nt_args
 {
+    uint8_t textmode;
     uint8_t testmode;
     uint8_t hires;
     uint8_t hal;

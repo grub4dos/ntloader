@@ -23,6 +23,7 @@
 #include "efi/Protocol/SimpleFileSystem.h"
 #include "efi/Protocol/LoadFile2.h"
 #include "efi/Protocol/LoadedImage.h"
+#include "efi/Protocol/GraphicsOutput.h"
 
 /** EFI system table */
 EFI_SYSTEM_TABLE *efi_systab;
@@ -50,6 +51,10 @@ EFI_GUID efi_simple_file_system_protocol_guid
 EFI_GUID efi_load_file2_protocol_guid
 = EFI_LOAD_FILE2_PROTOCOL_GUID;
 
+/** Graphics output protocol GUID */
+EFI_GUID efi_gop_guid
+= EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+
 void *efi_malloc (size_t size)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
@@ -73,13 +78,13 @@ void efi_free_pages (void *ptr, UINTN pages)
     efi_systab->BootServices->FreePages (addr, pages);
 }
 
-void *efi_allocate_pages (UINTN pages)
+void *efi_allocate_pages (UINTN pages, EFI_MEMORY_TYPE type)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
     EFI_STATUS efirc;
     EFI_PHYSICAL_ADDRESS addr = 0;
     efirc = bs->AllocatePages (AllocateAnyPages,
-                               EfiLoaderData, pages, &addr);
+                               type, pages, &addr);
     if (efirc != EFI_SUCCESS)
         die ("Could not allocate memory.\n");
     return (void *) (intptr_t) addr;

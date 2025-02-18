@@ -31,6 +31,68 @@
 #include "vdisk.h"
 #include "efi.h"
 #include "efiboot.h"
+#include "efi/Protocol/GraphicsOutput.h"
+
+/** Original OpenProtocol() method */
+static EFI_OPEN_PROTOCOL orig_open_protocol;
+
+/** Dummy "opening gop blocked once" protocol GUID */
+static EFI_GUID efi_gop_blocked_guid =
+{
+    0xbd1598bf, 0x8e65, 0x47e0,
+    { 0x80, 0x01, 0xe4, 0x62, 0x4c, 0xab, 0xa4, 0x7f }
+};
+
+/** Dummy "opening gop blocked once" protocol instance */
+static uint8_t efi_gop_blocked;
+
+/**
+ * Intercept OpenProtocol()
+ *
+ * @v handle		EFI handle
+ * @v protocol		Protocol GUID
+ * @v interface		Opened interface
+ * @v agent_handle	Agent handle
+ * @v controller_handle	Controller handle
+ * @v attributes	Attributes
+ * @ret efirc		EFI status code
+ */
+static EFI_STATUS EFIAPI
+efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
+                           VOID **interface, EFI_HANDLE agent_handle,
+                           EFI_HANDLE controller_handle,
+                           UINT32 attributes)
+{
+    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
+    EFI_STATUS efirc;
+
+    /* Open the protocol */
+    efirc = orig_open_protocol (handle, protocol, interface,
+                                agent_handle, controller_handle,
+                                attributes);
+    if (efirc != 0)
+        return efirc;
+
+    /* Block first attempt by bootmgfw.efi to open each
+     * EFI_GRAPHICS_OUTPUT_PROTOCOL.  This forces error messages
+     * to be displayed in text mode (thereby avoiding the totally
+     * blank error screen if the fonts are missing).  We must
+     * allow subsequent attempts to succeed, otherwise the OS will
+     * fail to boot.
+     */
+    if ((memcmp (protocol, &efi_gop_guid, sizeof (*protocol)) == 0) &&
+        (bs->InstallMultipleProtocolInterfaces (&handle,
+                                                &efi_gop_blocked_guid,
+                                                &efi_gop_blocked,
+                                                NULL) == 0) &&
+        (nt_cmdline->textmode))
+    {
+        DBG ("Forcing text mode output\n");
+        return EFI_INVALID_PARAMETER;
+    }
+
+    return 0;
+}
 
 /**
  * Boot from EFI device
@@ -47,24 +109,13 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
         EFI_LOADED_IMAGE_PROTOCOL *image;
         void *intf;
     } loaded;
-    EFI_PHYSICAL_ADDRESS phys;
     void *data;
-    unsigned int pages;
     EFI_HANDLE handle;
     EFI_STATUS efirc;
 
     /* Allocate memory */
-    pages = ((nt_cmdline->bootmgr_length + PAGE_SIZE - 1) / PAGE_SIZE);
-    efirc = bs->AllocatePages (AllocateAnyPages,
-                               EfiBootServicesData, pages,
-                               &phys);
-    if (efirc != 0)
-    {
-        die ("Could not allocate %d pages: %#lx\n",
-             pages, ((unsigned long) efirc));
-    }
-    data = ((void *) (intptr_t) phys);
-
+    data = efi_allocate_pages (
+        BYTES_TO_PAGES (nt_cmdline->bootmgr_length), EfiLoaderCode);
 
     /* Copy image */
     memcpy (data, nt_cmdline->bootmgr, nt_cmdline->bootmgr_length);
@@ -97,6 +148,12 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
              loaded.image->DeviceHandle, device);
         loaded.image->DeviceHandle = device;
     }
+
+    /* Intercept calls to OpenProtocol() */
+    orig_open_protocol =
+        loaded.image->SystemTable->BootServices->OpenProtocol;
+    loaded.image->SystemTable->BootServices->OpenProtocol =
+        efi_open_protocol_wrapper;
 
     /* Start image */
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)

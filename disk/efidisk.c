@@ -426,7 +426,7 @@ efidisk_read (void *disk, uint64_t sector, size_t len, void *buf)
     EFI_BLOCK_IO_PROTOCOL *bio;
     EFI_STATUS status;
     UINTN pages = BYTES_TO_PAGES (len);
-    void *mem = efi_allocate_pages (pages);
+    void *mem = efi_allocate_pages (pages, EfiLoaderData);
 
     bio = d->bio;
 

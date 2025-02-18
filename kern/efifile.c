@@ -95,7 +95,7 @@ efi_load_sfs_initrd (UINTN *len, EFI_HANDLE handle)
         die ("Could not get file size\n");
     DBG ("...found %ls size 0x%llx\n", wpath, size);
     *len = size;
-    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len));
+    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len), EfiLoaderData);
     efirc = file->Read (file, len, initrd);
     if (efirc != EFI_SUCCESS)
         die ("Could not read from file.\n");
@@ -140,7 +140,7 @@ efi_load_lf2_initrd (UINTN *len)
         die ("Could not get initrd size\n");
 
     /* Allocate memory */
-    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len));
+    initrd = efi_allocate_pages (BYTES_TO_PAGES (*len), EfiLoaderData);
 
     /* Read initrd */
     efirc = lf2->LoadFile (lf2, dp, FALSE, len, initrd);
