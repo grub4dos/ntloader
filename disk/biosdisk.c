@@ -43,7 +43,7 @@ call_int13h (struct bootapp_callback_params *params)
     __asm__ ("pushf\n\t"
              "pop %0\n\t"
              : "=r" (eflags));
-    params->eflags = (eflags & ~CF);
+    params->eflags = (eflags & ~CF) | IF;
     params->vector.interrupt = 0x13;
     call_interrupt (params);
 }
