@@ -171,6 +171,15 @@ setup:
 	cld
 	rep movsb
 
+	/* Copy bcd */
+	movl	$(LOADED_HIGH_ADDRESS + _payload_pos - SETUP_LEN), %eax
+	addl	$_payload_len, %eax
+	movl	%eax, %esi
+	movl	$_bcd, %edi
+	movl	$_bcd_len, %ecx
+	cld
+	rep movsb
+
 	/* Copy parameters required by runtime */
 	movl	%cs:( cmd_line_ptr - _prefix ), %eax
 	movl	%eax, i386(cmdline)

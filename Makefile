@@ -199,6 +199,9 @@ ntloader.%.efi : ntloader.%.elf elf2efi64 Makefile
 ntloader.% : ntloader.%.efi Makefile
 	$(CP) $< $@
 
+# Utilities
+include utils/build.mk
+
 ###############################################################################
 #
 # i386 objects
@@ -259,9 +262,6 @@ lib.x86_64.a : $(OBJECTS_x86_64) $(OBJECTS_i386_x86_64) Makefile
 lib.arm64.a : $(OBJECTS_arm64) Makefile
 	$(RM) -f $@
 	$(AR_arm64) -r -s $@ $(OBJECTS_arm64)
-
-# Utilities
-include utils/build.mk
 
 ###############################################################################
 #

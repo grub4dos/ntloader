@@ -64,3 +64,13 @@ bmtool : $(BMTOOL_FILES)
 	$(HOST_CC) $(HOST_CFLAGS) -iquote include/ $(BMTOOL_FILES) -o $@
 
 RM_FILES += bmtool bmtool.exe
+
+# bin2c
+#
+bin2c : utils/bin2c.c
+	$(HOST_CC) $(HOST_CFLAGS) $< -o $@
+include/bcd_raw.h : utils/bcd bin2c
+	./bin2c utils/bcd $@ bcd_raw "__attribute__ ((section (\".bcd\"), aligned (512)))"
+
+HEADERS += include/bcd_raw.h
+RM_FILES += bin2c include/bcd_raw.h

@@ -29,10 +29,5 @@ find * | cpio -o -H newc > ../initrd.cpio
 ### bmtool
 `bmtool` is a program for extracting bootmgr.exe from bootmgr.  
 
-### bcd.bat
-`bcd.bat` is a batch script to create the BCD file.  
-Do not edit it unless you know how NTloader works.  
-:warning: Administrator privileges are required.  
-
 <div style="page-break-after: always;"></div>
 

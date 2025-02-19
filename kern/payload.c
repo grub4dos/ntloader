@@ -30,6 +30,18 @@
 #include "cmdline.h"
 #include "efi.h"
 
+#ifdef __x86_64__
+extern unsigned char
+__i386_bcd_raw[] __attribute__ ((section (".bcd"), aligned (512)));
+extern unsigned int __i386_bcd_raw_len;
+#define BCD_RAW __i386_bcd_raw
+#define BCD_LEN __i386_bcd_raw_len
+#else
+#include "bcd_raw.h"
+#define BCD_RAW bcd_raw
+#define BCD_LEN bcd_raw_len
+#endif
+
 /**
  * Read virtual file from memory
  *
@@ -87,12 +99,6 @@ static int add_file (const char *name, void *data, size_t len)
         nt_cmdline->bootmgr_length = len;
         nt_cmdline->bootmgr = data;
     }
-    else if (strcasecmp (name, "BCD") == 0)
-    {
-        DBG ("...found BCD\n");
-        nt_cmdline->bcd_length = len;
-        nt_cmdline->bcd = data;
-    }
 
     return 0;
 }
@@ -105,6 +111,12 @@ static int add_file (const char *name, void *data, size_t len)
  */
 void extract_initrd (void *ptr, size_t len)
 {
+    nt_cmdline->bcd_length = BCD_LEN;
+    nt_cmdline->bcd = BCD_RAW;
+    printf ("...load BCD @%p %c%c%c%c [%x]\n", BCD_RAW,
+            BCD_RAW[0], BCD_RAW[1], BCD_RAW[2], BCD_RAW[3], BCD_LEN);
+    vdisk_add_file ("BCD", BCD_RAW, BCD_LEN, read_mem_file);
+
     if (cpio_extract (ptr, len, add_file) != 0)
         die ("FATAL: could not extract initrd files\n");
 

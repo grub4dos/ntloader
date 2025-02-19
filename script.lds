@@ -122,8 +122,20 @@ SECTIONS {
 	}
 	_bss_len = ABSOLUTE ( _ebss ) - ABSOLUTE ( _bss );
 
+	/* Windows Boot Configuration Data (BCD) section */
+	_bcd_pos = ( _text_pos + _text_len );
+	.bcd : AT ( _bcd_pos ) {
+		_bcd = .;
+		*(.bcd)
+		*(.bcd.*)
+		_ebcd = .;
+		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _ebda_start ),
+			 "Binary is too large (overlap the EBDA)" );
+	}
+	_bcd_len = ABSOLUTE ( _ebcd ) - ABSOLUTE ( _bcd );
+
 	/* Secure Boot Advanced Targeting (SBAT) section */
-	_sbat_pos = ( _text_pos + _text_len );
+	_sbat_pos = ( _bcd_pos + _bcd_len );
 	.sbat : AT ( _sbat_pos ) {
 		_sbat = .;
 		*(.sbat)
