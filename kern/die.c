@@ -37,7 +37,6 @@
  */
 void die (const char *fmt, ...)
 {
-    EFI_RUNTIME_SERVICES *rs;
     va_list args;
 
     /* Print message */
@@ -51,17 +50,13 @@ void die (const char *fmt, ...)
     printf ("\n");
 
     /* Reboot system */
-    if (efi_systab)
-    {
-        rs = efi_systab->RuntimeServices;
-        rs->ResetSystem (EfiResetWarm, 0, 0, NULL);
-        printf ("Failed to reboot\n");
-
-    }
-    else
-    {
-        reboot();
-    }
+#ifdef __i386__
+    reboot ();
+#else
+    EFI_RUNTIME_SERVICES *rs = efi_systab->RuntimeServices;
+    rs->ResetSystem (EfiResetWarm, 0, 0, NULL);
+    printf ("Failed to reboot\n");
+#endif
 
     /* Should be impossible to reach this */
     __builtin_unreachable();

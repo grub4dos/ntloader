@@ -28,7 +28,6 @@
 #include "bcd.h"
 #include "cmdline.h"
 #include "charset.h"
-#include "efi.h"
 
 static void
 bcd_replace_suffix (const wchar_t *src, const wchar_t *dst)
@@ -346,8 +345,9 @@ bcd_patch_data (void)
     bcd_patch_sz (&hive, objects, entry_guid,
                   BCDOPT_SYSROOT, nt_cmdline->sysroot);
 
-    if (efi_systab)
-        bcd_replace_suffix (L".exe", L".efi");
-    else
-        bcd_replace_suffix (L".efi", L".exe");
+#ifdef __i386__
+    bcd_replace_suffix (L".efi", L".exe");
+#else
+    bcd_replace_suffix (L".exe", L".efi");
+#endif
 }
