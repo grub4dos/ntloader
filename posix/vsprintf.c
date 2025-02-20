@@ -57,8 +57,9 @@ static uint8_t type_sizes[] =
 /**
  * Use "alternate form"
  *
- * For hexadecimal numbers, this means to add a "0x" or "0X" prefix to
- * the number.
+ * For hexadecimal numbers, this means to add a "0x" or "0X"
+ * prefix to the number.
+ * For decimal numbers, this means signed numbers.
  */
 #define ALT_FORM 0x02
 
@@ -69,6 +70,12 @@ static uint8_t type_sizes[] =
  * character to be calculated as @c 0x20|(flags&ZPAD)
  */
 #define ZPAD 0x10
+
+typedef union
+{
+    unsigned long long u;
+    signed long long d;
+} fmt_number;
 
 /**
  * Format a hexadecimal number
@@ -87,8 +94,8 @@ static uint8_t type_sizes[] =
  * There must be enough space in the buffer to contain the largest
  * number that this function can format.
  */
-static char *format_hex (char *end, unsigned long long num, int width,
-                          int flags)
+static char *format_hex (char *end, fmt_number num, int width,
+                         int flags)
 {
     char *ptr = end;
     int case_mod = (flags & LCASE);
@@ -97,9 +104,9 @@ static char *format_hex (char *end, unsigned long long num, int width,
     /* Generate the number */
     do
     {
-        *(--ptr) = "0123456789ABCDEF"[ num & 0xf ] | case_mod;
-        num >>= 4;
-    } while (num);
+        *(--ptr) = "0123456789ABCDEF"[num.u & 0xf] | case_mod;
+        num.u >>= 4;
+    } while (num.u);
 
     /* Pad to width */
     while ((end - ptr) < width)
@@ -130,8 +137,8 @@ static char *format_hex (char *end, unsigned long long num, int width,
  * There must be enough space in the buffer to contain the largest
  * number that this function can format.
  */
-static char *format_decimal (char *end, signed long num, int width,
-                              int flags)
+static char *format_decimal (char *end, fmt_number num, int width,
+                             int flags)
 {
     char *ptr = end;
     int negative = 0;
@@ -139,16 +146,17 @@ static char *format_decimal (char *end, signed long num, int width,
     int pad = (zpad | ' ');
 
     /* Generate the number */
-    if (num < 0)
+    if ((flags & ALT_FORM) && (num.d < 0))
     {
         negative = 1;
-        num = -num;
+        num.u = (unsigned long long)(-num.d);
     }
+
     do
     {
-        *(--ptr) = '0' + (num % 10);
-        num /= 10;
-    } while (num);
+        *(--ptr) = '0' + (num.u % 10);
+        num.u /= 10;
+    } while (num.u);
 
     /* Add "-" if necessary */
     if (negative && (! zpad))
@@ -174,7 +182,8 @@ static char *format_decimal (char *end, signed long num, int width,
  * Call's the printf_context::handler() method and increments
  * printf_context::len.
  */
-static inline void cputchar (struct printf_context *ctx, unsigned int c)
+static inline void
+cputchar (struct printf_context *ctx, unsigned int c)
 {
     ctx->handler (ctx, c);
     ++ctx->len;
@@ -188,14 +197,16 @@ static inline void cputchar (struct printf_context *ctx, unsigned int c)
  * @v args		Arguments corresponding to the format string
  * @ret len		Length of formatted string
  */
-size_t vcprintf (struct printf_context *ctx, const char *fmt, va_list args)
+size_t vcprintf
+(struct printf_context *ctx, const char *fmt, va_list args)
 {
     int flags;
     int width;
     uint8_t *length;
     char *ptr;
-    char tmp_buf[32]; /* 32 is enough for all numerical formats.
-			   * Insane width fields could overflow this buffer. */
+    /* 32 is enough for all numerical formats.
+     * Insane width fields could overflow this buffer. */
+    char tmp_buf[32];
     wchar_t *wptr;
 
     /* Initialise context */
@@ -277,33 +288,49 @@ size_t vcprintf (struct printf_context *ctx, const char *fmt, va_list args)
         }
         else if (*fmt == 'p')
         {
-            intptr_t ptrval;
+            fmt_number ptrval;
 
-            ptrval = (intptr_t) va_arg (args, void *);
+            ptrval.u = (intptr_t) va_arg (args, void *);
             ptr = format_hex (ptr, ptrval, width,
                                (ALT_FORM | LCASE));
         }
         else if ((*fmt & ~0x20) == 'X')
         {
-            unsigned long long hex;
+            fmt_number hex;
 
             flags |= (*fmt & 0x20); /* LCASE */
             if (*length >= sizeof (unsigned long long))
-                hex = va_arg (args, unsigned long long);
+                hex.u = va_arg (args, unsigned long long);
             else if (*length >= sizeof (unsigned long))
-                hex = va_arg (args, unsigned long);
+                hex.u = va_arg (args, unsigned long);
             else
-                hex = va_arg (args, unsigned int);
+                hex.u = va_arg (args, unsigned int);
             ptr = format_hex (ptr, hex, width, flags);
         }
         else if ((*fmt == 'd') || (*fmt == 'i'))
         {
-            signed long decimal;
+            fmt_number decimal;
 
-            if (*length >= sizeof (signed long))
-                decimal = va_arg (args, signed long);
+            flags |= ALT_FORM; /* signed */
+            if (*length >= sizeof (signed long long))
+                decimal.d = va_arg (args, signed long long);
+            else if (*length >= sizeof (signed long))
+                decimal.d = va_arg (args, signed long);
             else
-                decimal = va_arg (args, signed int);
+                decimal.d = va_arg (args, signed int);
+            ptr = format_decimal (ptr, decimal, width, flags);
+        }
+        else if (*fmt == 'u')
+        {
+            fmt_number decimal;
+
+            flags &= ~ALT_FORM; /* unsigned */
+            if (*length >= sizeof (unsigned long long))
+                decimal.u = va_arg (args, unsigned long long);
+            else if (*length >= sizeof (unsigned long))
+                decimal.u = va_arg (args, unsigned long);
+            else
+                decimal.u = va_arg (args, unsigned int);
             ptr = format_decimal (ptr, decimal, width, flags);
         }
         else
