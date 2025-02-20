@@ -59,7 +59,6 @@ jobs:
         run: |
           mkdir -p build
           cp ntloader build/
-          cp ntloader.i386 build/
           cp ntloader.arm64 build/
           cp initrd.cpio build/
           cp fsuuid.exe build/
