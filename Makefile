@@ -1,8 +1,6 @@
 # Versioning information
 #
 VERSION := v3.0.4
-WIMBOOT_VERSION := v2.8.0
-SBAT_GENERATION := 1
 
 # Abstract target-independent objects
 #
@@ -97,8 +95,6 @@ OBJCOPY_arm64	?= $(CROSS_arm64)$(OBJCOPY)
 CFLAGS		+= -Os -ffreestanding -Wall -W -Werror
 CFLAGS		+= -nostdinc -Iinclude/ -fshort-wchar
 CFLAGS		+= -DVERSION="\"$(VERSION)\""
-CFLAGS		+= -DWIMBOOT_VERSION="\"$(WIMBOOT_VERSION)\""
-CFLAGS		+= -DSBAT_GENERATION="\"$(SBAT_GENERATION)\""
 CFLAGS		+= -include compiler.h
 ifneq ($(DEBUG),)
 CFLAGS		+= -DDEBUG=$(DEBUG)

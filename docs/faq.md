@@ -1,5 +1,9 @@
 ## FAQ
 
+### Does Ntloader support secure boot?
+
+**NO.**
+
 ### 0xc0000001 error occurs when booting VHD/VHDX
 
 ![vhd_error](./images/vhd_error.png)

@@ -134,18 +134,6 @@ SECTIONS {
 	}
 	_bcd_len = ABSOLUTE ( _ebcd ) - ABSOLUTE ( _bcd );
 
-	/* Secure Boot Advanced Targeting (SBAT) section */
-	_sbat_pos = ( _bcd_pos + _bcd_len );
-	.sbat : AT ( _sbat_pos ) {
-		_sbat = .;
-		*(.sbat)
-		*(.sbat.*)
-		_esbat = .;
-		ASSERT ( ABSOLUTE ( . ) <= ABSOLUTE ( _ebda_start ),
-			 "Binary is too large (overlap the EBDA)" );
-	}
-	_sbat_len = ABSOLUTE ( _esbat ) - ABSOLUTE ( _sbat );
-
 	_end = .;
 
 	/* Symbols required by i386.x86_64 objects */
