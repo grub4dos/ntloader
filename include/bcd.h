@@ -51,8 +51,10 @@
 #define BCDOPT_TITLE    L"12000004"
 #define BCDOPT_LANG     L"12000005"
 #define BCDOPT_CMDLINE  L"12000030"
-#define BCDOPT_INHERIT  L"14000006" // options & safeboot
+#define BCDOPT_INHERIT  L"14000006" // options
 #define BCDOPT_GFXMODE  L"15000052" // graphicsresolution
+#define BCDOPT_ADVOPT   L"16000040" // advanced options
+#define BCDOPT_OPTEDIT  L"16000041" // options edit
 #define BCDOPT_TESTMODE L"16000049" // testsigning
 #define BCDOPT_HIGHRES  L"16000054" // highest resolution
 #define BCDOPT_OSDDEV   L"21000001" // os device

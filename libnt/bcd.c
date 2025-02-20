@@ -303,6 +303,10 @@ bcd_patch_data (void)
                     BCDOPT_NOVGA, nt_cmdline->novga);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
                     BCDOPT_NOVESA, nt_cmdline->novesa);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_ADVOPT, nt_cmdline->advmenu);
+    bcd_patch_bool (&hive, objects, GUID_OPTN,
+                    BCDOPT_OPTEDIT, nt_cmdline->optedit);
     bcd_patch_u64 (&hive, objects, GUID_OPTN,
                    BCDOPT_NX, nt_cmdline->nx);
     bcd_patch_u64 (&hive, objects, GUID_OPTN,

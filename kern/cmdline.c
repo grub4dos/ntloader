@@ -39,6 +39,8 @@ static struct nt_args args =
     .safemode = NTARG_BOOL_FALSE,
     .altshell = NTARG_BOOL_FALSE,
     .exportcd = NTARG_BOOL_FALSE,
+    .advmenu = NTARG_BOOL_FALSE,
+    .optedit = NTARG_BOOL_FALSE,
 
     .nx = NX_OPTIN,
     .pae = PAE_DEFAULT,
@@ -222,6 +224,14 @@ void process_cmdline (char *cmdline)
         else if (strcmp (key, "exportascd") == 0)
         {
             args.exportcd = convert_bool (value);
+        }
+        else if (strcmp (key, "f8") == 0)
+        {
+            args.advmenu = NTARG_BOOL_TRUE;
+        }
+        else if (strcmp (key, "edit") == 0)
+        {
+            args.optedit = NTARG_BOOL_TRUE;
         }
         else if (strcmp (key, "nx") == 0)
         {

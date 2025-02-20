@@ -30,13 +30,13 @@ bcdedit %bcd% /set {bootmgr} timeout 1
 bcdedit %bcd% /set {bootmgr} displaybootmenu false
 
 bcdedit %bcd% /create {globalsettings}
-bcdedit %bcd% /set {globalsettings} optionsedit true
-bcdedit %bcd% /set {globalsettings} advancedoptions true
 bcdedit %bcd% /set {globalsettings} locale en-us
 
 bcdedit %bcd% /create {bootloadersettings}
 
 bcdedit %bcd% /create %guidopt% /inherit OSLOADER
+bcdedit %bcd% /set %guidopt% optionsedit true
+bcdedit %bcd% /set %guidopt% advancedoptions true
 bcdedit %bcd% /set %guidopt% detecthal true
 bcdedit %bcd% /set %guidopt% winpe true
 bcdedit %bcd% /set %guidopt% testsigning true

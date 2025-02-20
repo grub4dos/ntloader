@@ -50,6 +50,8 @@ struct nt_args
     uint8_t safemode;
     uint8_t altshell;
     uint8_t exportcd;
+    uint8_t advmenu;
+    uint8_t optedit;
 
     uint64_t nx;
     uint64_t pae;

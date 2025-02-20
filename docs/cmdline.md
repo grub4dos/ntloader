@@ -49,6 +49,18 @@ text
 ```
 Force the Windows boot manager to display error messages in text mode.  
 
+### f8
+```
+f8
+```
+Enable the F8 `Advanced Boot Options` menu.  
+
+### edit
+```
+edit
+```
+Enable the `Edit Boot Options` menu.  
+
 ### testmode
 ```
 testmode=yes|no
