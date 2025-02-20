@@ -9,9 +9,6 @@ HOST_CFLAGS	+= -Wall -W -Werror -fshort-wchar -DNTLOADER_UTIL
 
 # EFI relocator
 #
-elf2efi32 : utils/elf2efi.c
-	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ -DEFI_TARGET32 $< -o $@
-
 elf2efi64 : utils/elf2efi.c
 	$(HOST_CC) $(HOST_CFLAGS) -idirafter include/ -DEFI_TARGET64 $< -o $@
 
