@@ -55,6 +55,7 @@
 #define BCDOPT_GFXMODE  L"15000052" // graphicsresolution
 #define BCDOPT_ADVOPT   L"16000040" // advanced options
 #define BCDOPT_OPTEDIT  L"16000041" // options edit
+#define BCDOPT_TEXT     L"16000046" // graphicsmodedisabled
 #define BCDOPT_TESTMODE L"16000049" // testsigning
 #define BCDOPT_HIGHRES  L"16000054" // highest resolution
 #define BCDOPT_OSDDEV   L"21000001" // os device

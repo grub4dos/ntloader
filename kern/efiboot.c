@@ -33,6 +33,8 @@
 #include "efiboot.h"
 #include "efi/Protocol/GraphicsOutput.h"
 
+#ifdef ENABLE_TEXT_DEBUG
+
 /** Original OpenProtocol() method */
 static EFI_OPEN_PROTOCOL orig_open_protocol;
 
@@ -94,6 +96,8 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
     return 0;
 }
 
+#endif
+
 /**
  * Boot from EFI device
  *
@@ -149,11 +153,13 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
         loaded.image->DeviceHandle = device;
     }
 
+#ifdef ENABLE_TEXT_DEBUG
     /* Intercept calls to OpenProtocol() */
     orig_open_protocol =
         loaded.image->SystemTable->BootServices->OpenProtocol;
     loaded.image->SystemTable->BootServices->OpenProtocol =
         efi_open_protocol_wrapper;
+#endif
 
     /* Start image */
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)

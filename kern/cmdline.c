@@ -228,10 +228,12 @@ void process_cmdline (char *cmdline)
         else if (strcmp (key, "f8") == 0)
         {
             args.advmenu = NTARG_BOOL_TRUE;
+            args.textmode = NTARG_BOOL_TRUE;
         }
         else if (strcmp (key, "edit") == 0)
         {
             args.optedit = NTARG_BOOL_TRUE;
+            args.textmode = NTARG_BOOL_TRUE;
         }
         else if (strcmp (key, "nx") == 0)
         {

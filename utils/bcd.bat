@@ -54,6 +54,7 @@ bcdedit %bcd% /set %guidopt% safeboot minimal
 bcdedit %bcd% /set %guidopt% safebootalternateshell yes
 bcdedit %bcd% /set %guidopt% graphicsresolution 1024x768
 bcdedit %bcd% /set %guidopt% highestmode true
+bcdedit %bcd% /set %guidopt% graphicsmodedisabled true
 
 bcdedit %bcd% /create {ramdiskoptions}
 bcdedit %bcd% /set {ramdiskoptions} ramdisksdidevice "boot"
