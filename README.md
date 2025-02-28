@@ -20,8 +20,8 @@ Extract `ntloader` and `initrd.cpio` onto the disk, and modify the bootloader me
 ```
 # GRUB 2 (>= 2.12)
 menuentry "Boot Windows NT6+ WIM" {
-    search -s --f /path/to/ntloader
-    search -s dev --f /path/to/winpe.wim
+    search -s -f /path/to/ntloader
+    search -s dev -f /path/to/winpe.wim
     probe -s dev_uuid -u $dev
     if [ "${grub_platform}" = "efi" ]; then
         linux /path/to/ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
@@ -33,8 +33,8 @@ menuentry "Boot Windows NT6+ WIM" {
 }
 
 menuentry "Boot Windows NT6+ VHD/VHDx" {
-    search -s --f /path/to/ntloader
-    search -s dev --f /path/to/windows.vhd
+    search -s -f /path/to/ntloader
+    search -s dev -f /path/to/windows.vhd
     probe -s dev_uuid -u $dev
     if [ "${grub_platform}" = "efi" ]; then
         linux /path/to/ntloader uuid=${dev_uuid} vhd=/path/to/windows.vhd
@@ -46,7 +46,7 @@ menuentry "Boot Windows NT6+ VHD/VHDx" {
 }
 
 menuentry "Boot Windows NT6+ on (hdx,y)" {
-    search -s --f /path/to/ntloader
+    search -s -f /path/to/ntloader
     probe -s dev_uuid -u (hdx,y)
     if [ "${grub_platform}" = "efi" ]; then
         linux /path/to/ntloader uuid=${dev_uuid}
