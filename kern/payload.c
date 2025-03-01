@@ -56,7 +56,6 @@ static void read_mem_file (struct vdisk_file *file, void *data,
     memcpy (data, (file->opaque + offset), len);
 }
 
-#ifndef __i386__
 /**
  * Get architecture-specific boot filename
  *
@@ -75,7 +74,6 @@ static const CHAR16 *efi_bootarch (void)
     }
     return bootarch;
 }
-#endif
 
 /**
  * File handler
@@ -87,17 +85,15 @@ static const CHAR16 *efi_bootarch (void)
  */
 static int add_file (const char *name, void *data, size_t len)
 {
-#ifdef __i386__
-    const char *bootarch = "bootmgr.exe";
-#else
     char bootarch[32];
+
     snprintf (bootarch, sizeof (bootarch), "%ls", efi_bootarch());
-#endif
 
     vdisk_add_file (name, data, len, read_mem_file);
 
     /* Check for special-case files */
-    if (strcasecmp (name, bootarch) == 0)
+    if ((efi_systab && strcasecmp (name, bootarch) == 0) ||
+        (!efi_systab && strcasecmp (name, "bootmgr.exe") == 0))
     {
         DBG ("...found bootmgr file %s\n", name);
         nt_cmdline->bootmgr_length = len;

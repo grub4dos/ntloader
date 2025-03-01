@@ -37,25 +37,36 @@
  */
 int putchar (int character)
 {
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
+    struct bootapp_callback_params params;
+    wchar_t wbuf[2];
+
     /* Convert LF to CR,LF */
     if (character == '\n')
         putchar ('\r');
 
-    /* Print character to EFI/BIOS console as applicable */
-#ifdef __i386__
-    struct bootapp_callback_params params;
-    memset (&params, 0, sizeof (params));
-    params.vector.interrupt = 0x10;
-    params.eax = (0x0e00 | character);
-    params.ebx = 0x0007;
-    call_interrupt (&params);
-#else
-    wchar_t wbuf[2];
-    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout = efi_systab->ConOut;
-    wbuf[0] = character;
-    wbuf[1] = 0;
-    conout->OutputString (conout, wbuf);
+    /* Print character to bochs debug port */
+#if defined(__i386__) || defined(__x86_64__)
+    __asm__ __volatile__ ("outb %b0, $0xe9"
+                           : : "a" (character));
 #endif
+
+    /* Print character to EFI/BIOS console as applicable */
+    if (efi_systab)
+    {
+        conout = efi_systab->ConOut;
+        wbuf[0] = character;
+        wbuf[1] = 0;
+        conout->OutputString (conout, wbuf);
+    }
+    else
+    {
+        memset (&params, 0, sizeof (params));
+        params.vector.interrupt = 0x10;
+        params.eax = (0x0e00 | character);
+        params.ebx = 0x0007;
+        call_interrupt (&params);
+    }
 
     return 0;
 }
@@ -67,23 +78,29 @@ int putchar (int character)
  */
 int getchar (void)
 {
-    int character;
-
-#ifdef __i386__
-    struct bootapp_callback_params params;
-    memset (&params, 0, sizeof (params));
-    params.vector.interrupt = 0x16;
-    call_interrupt (&params);
-    character = params.al;
-#else
+    EFI_BOOT_SERVICES *bs;
+    EFI_SIMPLE_TEXT_INPUT_PROTOCOL *conin;
     EFI_INPUT_KEY key;
     UINTN index;
-    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
-    EFI_SIMPLE_TEXT_INPUT_PROTOCOL *conin = efi_systab->ConIn;
-    bs->WaitForEvent (1, &conin->WaitForKey, &index);
-    conin->ReadKeyStroke (conin, &key);
-    character = key.UnicodeChar;
-#endif
+    struct bootapp_callback_params params;
+    int character;
+
+    /* Get character */
+    if (efi_systab)
+    {
+        bs = efi_systab->BootServices;
+        conin = efi_systab->ConIn;
+        bs->WaitForEvent (1, &conin->WaitForKey, &index);
+        conin->ReadKeyStroke (conin, &key);
+        character = key.UnicodeChar;
+    }
+    else
+    {
+        memset (&params, 0, sizeof (params));
+        params.vector.interrupt = 0x16;
+        call_interrupt (&params);
+        character = params.al;
+    }
 
     return character;
 }

@@ -1,6 +1,8 @@
 # Versioning information
 #
-VERSION := v3.0.4
+VERSION := v3.0.5
+WIMBOOT_VERSION := v2.8.0
+SBAT_GENERATION := 1
 
 # Abstract target-independent objects
 #
@@ -95,6 +97,8 @@ OBJCOPY_arm64	?= $(CROSS_arm64)$(OBJCOPY)
 CFLAGS		+= -Os -ffreestanding -Wall -W -Werror
 CFLAGS		+= -nostdinc -Iinclude/ -fshort-wchar
 CFLAGS		+= -DVERSION="\"$(VERSION)\""
+CFLAGS		+= -DWIMBOOT_VERSION="\"$(WIMBOOT_VERSION)\""
+CFLAGS		+= -DSBAT_GENERATION="\"$(SBAT_GENERATION)\""
 CFLAGS		+= -include compiler.h
 ifneq ($(DEBUG),)
 CFLAGS		+= -DDEBUG=$(DEBUG)
@@ -175,7 +179,7 @@ CFLAGS_arm64	+= $(call CFLAGS_COND,arm64)
 #
 # Final targets
 
-all : ntloader ntloader.x86_64 ntloader.arm64
+all : ntloader ntloader.i386 ntloader.x86_64 ntloader.arm64
 
 ntloader : ntloader.x86_64 Makefile
 	$(CP) $< $@
@@ -183,6 +187,10 @@ ntloader : ntloader.x86_64 Makefile
 ntloader.%.elf : lib.%.a script.lds Makefile
 	$(LD_$*) $(LDFLAGS) $(LDFLAGS_$*) -T script.lds -o $@ -q \
 		-Map ntloader.$*.map prefix.$*.o lib.$*.a
+
+ntloader.i386.efi : \
+ntloader.%.efi : ntloader.%.elf elf2efi32 Makefile
+	./elf2efi32 $< $@
 
 ntloader.x86_64.efi ntloader.arm64.efi : \
 ntloader.%.efi : ntloader.%.elf elf2efi64 Makefile
@@ -203,6 +211,13 @@ include utils/build.mk
 
 %.i386.s : %.c $(HEADERS) Makefile
 	$(CC_i386) $(CFLAGS) $(CFLAGS_i386) -S $< -o $@
+
+%.i386.o : %.i386.s i386.i Makefile
+	$(AS_i386) $(ASFLAGS) $(ASFLAGS_i386) i386.i $< -o $@
+
+lib.i386.a : $(OBJECTS_i386) Makefile
+	$(RM) -f $@
+	$(AR_i386) -r -s $@ $(OBJECTS_i386)
 
 ###############################################################################
 #
@@ -255,6 +270,7 @@ lib.arm64.a : $(OBJECTS_arm64) Makefile
 clean :
 	$(RM) -f $(RM_FILES)
 	$(RM) -f *.s *.o *.a *.elf *.map
+	$(RM) -f ntloader.i386 ntloader.i386.*
 	$(RM) -f ntloader.x86_64 ntloader.x86_64.*
 	$(RM) -f ntloader.arm64 ntloader.arm64.*
 	$(RM) -f ntloader
