@@ -39,6 +39,4 @@ do \
     } \
 } while (0)
 
-#define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
-
 #endif /* _ASSERT_H */

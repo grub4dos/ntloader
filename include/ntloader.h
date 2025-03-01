@@ -64,6 +64,18 @@
 #define BYTES_TO_PAGES(bytes)   (((bytes) + 0xfff) >> 12)
 #define PAGES_TO_BYTES(pages)   ((pages) << 12)
 
+#define ALIGN_UP(addr, align) \
+    (((addr) + (typeof (addr)) (align) - 1) & ~((typeof (addr)) (align) - 1))
+#define ALIGN_UP_OVERHEAD(addr, align) \
+    ((-(addr)) & ((typeof (addr)) (align) - 1))
+#define ALIGN_DOWN(addr, align) \
+    ((addr) & ~((typeof (addr)) (align) - 1))
+
+#define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
+
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 /** Calculating log base 2 of 64-bit integers */
 #define SECTOR_LOG2ULL(n, s) \
     for (n = 0; (1U << n) < s; n++);
