@@ -64,6 +64,12 @@
 #define BYTES_TO_PAGES(bytes)   (((bytes) + 0xfff) >> 12)
 #define PAGES_TO_BYTES(pages)   ((pages) << 12)
 
+#ifdef __i386__
+#define SIZEOF_VOID_P 4
+#else
+#define SIZEOF_VOID_P 8
+#endif
+
 #define ALIGN_UP(addr, align) \
     (((addr) + (typeof (addr)) (align) - 1) & ~((typeof (addr)) (align) - 1))
 #define ALIGN_UP_OVERHEAD(addr, align) \
