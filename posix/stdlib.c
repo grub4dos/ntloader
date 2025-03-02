@@ -16,9 +16,47 @@
  *  along with ntloader.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CMDLINE_H
-#define _CMDLINE_H
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
-extern void process_cmdline (char *cmdline);
+#include "ntloader.h"
+#include "pmapi.h"
 
-#endif /* _CMDLINE_H */
+void *calloc (size_t nmemb, size_t size)
+{
+    void *ret;
+    size_t sz = 0;
+
+    if (safe_mul (nmemb, size, &sz))
+        die ("overflow is detected");
+
+    ret = pm->_malloc (sz);
+    if (!ret)
+        return NULL;
+
+    memset (ret, 0, sz);
+    return ret;
+}
+
+void *malloc (size_t size)
+{
+    return pm->_malloc (size);
+}
+
+void *zalloc (size_t size)
+{
+    void *ret;
+
+    ret = pm->_malloc (size);
+    if (ret)
+        memset (ret, 0, size);
+
+    return ret;
+}
+
+void free (void *ptr)
+{
+    pm->_free (ptr);
+}

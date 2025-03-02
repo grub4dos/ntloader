@@ -26,13 +26,6 @@
 
 #include "ntloader.h"
 
-/* Refer to i386 symbols as needed */
-#if __x86_64__
-#define i386(symbol) __i386_ ## symbol
-#else
-#define i386(symbol) symbol
-#endif
-
 /** Standard number of setup sectors */
 #define SETUP_SECTS 4
 

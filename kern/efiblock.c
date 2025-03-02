@@ -27,7 +27,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "ntloader.h"
+#include "pmapi.h"
 #include "vdisk.h"
 #include "efi.h"
 #include "efiblock.h"

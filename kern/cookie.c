@@ -24,7 +24,7 @@
  *
  */
 
-#include "ntloader.h"
+#include "pmapi.h"
 
 /** Stack cookie */
 unsigned long __stack_chk_guard;

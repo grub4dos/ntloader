@@ -27,7 +27,7 @@
 #include "cpio.h"
 #include "ntloader.h"
 #include "bcd.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "efi.h"
 
 #ifdef __x86_64__
@@ -96,8 +96,8 @@ static int add_file (const char *name, void *data, size_t len)
         (!efi_systab && strcasecmp (name, "bootmgr.exe") == 0))
     {
         DBG ("...found bootmgr file %s\n", name);
-        nt_cmdline->bootmgr_length = len;
-        nt_cmdline->bootmgr = data;
+        pm->bootmgr_length = len;
+        pm->bootmgr = data;
     }
 
     return 0;
@@ -111,8 +111,8 @@ static int add_file (const char *name, void *data, size_t len)
  */
 void extract_initrd (void *ptr, size_t len)
 {
-    nt_cmdline->bcd_length = BCD_LEN;
-    nt_cmdline->bcd = BCD_RAW;
+    pm->bcd_length = BCD_LEN;
+    pm->bcd = BCD_RAW;
     printf ("...load BCD @%p %c%c%c%c [%x]\n", BCD_RAW,
             BCD_RAW[0], BCD_RAW[1], BCD_RAW[2], BCD_RAW[3], BCD_LEN);
     vdisk_add_file ("BCD", BCD_RAW, BCD_LEN, read_mem_file);
@@ -120,7 +120,7 @@ void extract_initrd (void *ptr, size_t len)
     if (cpio_extract (ptr, len, add_file) != 0)
         die ("FATAL: could not extract initrd files\n");
 
-    if (!nt_cmdline->bootmgr)
+    if (!pm->bootmgr)
         die ("FATAL: no bootmgr\n");
 
     bcd_patch_data ();

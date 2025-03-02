@@ -21,7 +21,7 @@
 #include <string.h>
 #include <strings.h>
 #include "fsuuid.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "ntloader.h"
 
 int
@@ -71,7 +71,7 @@ check_fsuuid (void *disk, uint64_t lba,
     }
 
     DBG ("%s %s\n", fs, uuid);
-    if (strcasecmp (uuid, nt_cmdline->fsuuid) == 0)
+    if (strcasecmp (uuid, pm->fsuuid) == 0)
         return 1;
     return 0;
 }

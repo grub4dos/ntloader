@@ -23,6 +23,7 @@
 #include <cmdline.h>
 #include <biosdisk.h>
 #include <ntloader.h>
+#include <pmapi.h>
 #include <msdos.h>
 #include <gpt.h>
 #include "int13.h"

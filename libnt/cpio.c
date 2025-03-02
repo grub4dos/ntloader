@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ntloader.h"
+#include "pmapi.h"
 #include "cpio.h"
 
 /**

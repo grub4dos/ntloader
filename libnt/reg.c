@@ -22,7 +22,7 @@
 #include <string.h>
 #include <wchar.h>
 #ifndef NTLOADER_UTIL
-#include "ntloader.h"
+#include "pmapi.h"
 #endif
 #include "reg.h"
 

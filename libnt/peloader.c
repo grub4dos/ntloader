@@ -28,7 +28,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
-#include "ntloader.h"
+#include "pmapi.h"
 #include "peloader.h"
 
 /**

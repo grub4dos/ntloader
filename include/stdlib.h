@@ -29,12 +29,9 @@
 
 extern unsigned long strtoul (const char *nptr, char **endptr, int base);
 
-extern void *memalign (size_t align, size_t size);
-
 extern void *calloc (size_t nmemb, size_t size);
 extern void *malloc (size_t size);
 extern void *zalloc (size_t size);
 extern void free (void *ptr);
-extern void *realloc (void *ptr, size_t size);
 
 #endif /* _STDLIB_H */

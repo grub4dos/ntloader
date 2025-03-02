@@ -1,72 +1,29 @@
-/* mm.c - functions for memory manager */
 /*
- *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2002,2005,2007,2008,2009  Free Software Foundation, Inc.
+ *  ntloader  --  Microsoft Windows NT6+ loader
+ *  Copyright (C) 2025  A1ive.
  *
- *  GRUB is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
+ *  ntloader is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published
+ *  by the Free Software Foundation, either version 3 of the License,
+ *  or (at your option) any later version.
  *
- *  GRUB is distributed in the hope that it will be useful,
+ *  ntloader is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-/*
- *  The design of this memory manager.
- *
- *  This is a simple implementation of malloc with a few extensions. These are
- *  the extensions:
- *
- *  - memalign is implemented efficiently.
- *
- *  - multiple regions may be used as free space. They may not be
- *  contiguous.
- *
- *  - if existing regions are insufficient to satisfy an allocation, a new
- *  region can be requested from firmware.
- *
- *  Regions are managed by a singly linked list, and the meta information is
- *  stored in the beginning of each region. Space after the meta information
- *  is used to allocate memory.
- *
- *  The memory space is used as cells instead of bytes for simplicity. This
- *  is important for some CPUs which may not access multiple bytes at a time
- *  when the first byte is not aligned at a certain boundary (typically,
- *  4-byte or 8-byte). The size of each cell is equal to the size of struct
- *  mm_header, so the header of each allocated/free block fits into one
- *  cell precisely. One cell is 16 bytes on 32-bit platforms and 32 bytes
- *  on 64-bit platforms.
- *
- *  There are two types of blocks: allocated blocks and free blocks.
- *
- *  In allocated blocks, the header of each block has only its size. Note that
- *  this size is based on cells but not on bytes. The header is located right
- *  before the returned pointer, that is, the header resides at the previous
- *  cell.
- *
- *  Free blocks constitutes a ring, using a singly linked list. The first free
- *  block is pointed to by the meta information of a region. The allocator
- *  attempts to pick up the second block instead of the first one. This is
- *  a typical optimization against defragmentation, and makes the
- *  implementation a bit easier.
- *
- *  For safety, both allocated blocks and free ones are marked by magic
- *  numbers. Whenever anything unexpected is detected, GRUB aborts the
- *  operation.
+ *  along with ntloader.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <string.h>
 #include <stdio.h>
-#include <stdlib.h>
-
+#include "bootapp.h"
 #include "ntloader.h"
+#include "pmapi.h"
 #include "mm.h"
+
+#if defined(__i386__) || defined(__x86_64__)
 
 /*
  * MM_MGMT_OVERHEAD is an upper bound of management overhead of
@@ -74,7 +31,7 @@
  *
  * The value must be large enough to make sure memalign(align, size)
  * always succeeds after a successful call to
- * mm_init_region(addr, size + align + MM_MGMT_OVERHEAD),
+ * bios_mm_init_region(addr, size + align + MM_MGMT_OVERHEAD),
  * for any given addr, align and size (assuming no interger overflow).
  *
  * The worst case which has maximum overhead is shown in the figure below:
@@ -101,10 +58,10 @@
  *                     + sizeof (struct mm_header) + (MM_ALIGN - 1)
  */
 #define MM_MGMT_OVERHEAD \
-    ((MM_ALIGN - 1) \
-     + sizeof (struct mm_region) \
-     + sizeof (struct mm_header) \
-     + (MM_ALIGN - 1))
+((MM_ALIGN - 1) \
++ sizeof (struct mm_region) \
++ sizeof (struct mm_header) \
++ (MM_ALIGN - 1))
 
 /* The size passed to mm_add_region_fn() is aligned up by this value. */
 #define MM_HEAP_GROW_ALIGN	4096
@@ -137,145 +94,6 @@ get_header_from_pointer (void *ptr, mm_header_t *p, mm_region_t *r)
         die ("double free at %p\n", *p);
     if ((*p)->magic != MM_ALLOC_MAGIC)
         die ("alloc magic is broken at %p: %zx\n", *p, (*p)->magic);
-}
-
-/* Initialize a region starting from ADDR and whose size is SIZE,
- *   to use it as free space.  */
-void
-mm_init_region (void *addr, size_t size)
-{
-    mm_header_t h;
-    mm_region_t r, *p, q;
-
-    DBG ("Using memory for heap: start=%p, end=%p\n",
-         addr, (char *) addr + (unsigned int) size);
-
-    /* Exclude last 4K to avoid overflows. */
-    /* If addr + 0x1000 overflows then whole region is in excluded zone.  */
-    if ((intptr_t) addr > ~((intptr_t) 0x1000))
-        return;
-
-    /* If addr + 0x1000 + size overflows then decrease size.  */
-    if (((intptr_t) addr + 0x1000) > ~(intptr_t) size)
-        size = ((intptr_t) -0x1000) - (intptr_t) addr;
-
-    /* Attempt to merge this region with every existing region */
-    for (p = &mm_base, q = *p; q; p = &(q->next), q = *p)
-    {
-        /*
-         * Is the new region immediately below an existing region? That
-         * is, is the address of the memory we're adding now (addr) + size
-         * of the memory we're adding (size) + the bytes we couldn't use
-         * at the start of the region we're considering (q->pre_size)
-         * equal to the address of q? In other words, does the memory
-         * looks like this?
-         *
-         * addr                          q
-         *   |----size-----|-q->pre_size-|<q region>|
-         */
-        if ((uint8_t *) addr + size + q->pre_size == (uint8_t *) q)
-        {
-            /*
-             * Yes, we can merge the memory starting at addr into the
-             * existing region from below. Align up addr to MM_ALIGN
-             * so that our new region has proper alignment.
-             */
-            r = (mm_region_t) ALIGN_UP ((intptr_t) addr, MM_ALIGN);
-            /* Copy the region data across */
-            *r = *q;
-            /* Consider all the new size as pre-size */
-            r->pre_size += size;
-
-            /*
-             * If we have enough pre-size to create a block, create a
-             * block with it. Mark it as allocated and pass it to
-             * free (), which will sort out getting it into the free
-             * list.
-             */
-            if (r->pre_size >> MM_ALIGN_LOG2)
-            {
-                h = (mm_header_t) (r + 1);
-                /* block size is pre-size converted to cells */
-                h->size = (r->pre_size >> MM_ALIGN_LOG2);
-                h->magic = MM_ALLOC_MAGIC;
-                /* region size grows by block size converted back to bytes */
-                r->size += h->size << MM_ALIGN_LOG2;
-                /* adjust pre_size to be accurate */
-                r->pre_size &= (MM_ALIGN - 1);
-                *p = r;
-                free (h + 1);
-            }
-            /* Replace the old region with the new region */
-            *p = r;
-            return;
-        }
-
-        /*
-         * Is the new region immediately above an existing region? That
-         * is:
-         *   q                       addr
-         *   |<q region>|-q->post_size-|----size-----|
-         */
-        if ((uint8_t *) q + sizeof (*q) + q->size + q->post_size ==
-            (uint8_t *) addr)
-        {
-            /*
-             * Yes! Follow a similar pattern to above, but simpler.
-             * Our header starts at address - post_size, which should align us
-             * to a cell boundary.
-             *
-             * Cast to (void *) first to avoid the following build error:
-             *   kern/mm.c: In function ‘mm_init_region’:
-             *   kern/mm.c:211:15: error: cast increases required alignment of target type [-Werror=cast-align]
-             *     211 |           h = (mm_header_t) ((uint8_t *) addr - q->post_size);
-             *         |               ^
-             * It is safe to do that because proper alignment is enforced in mm_size_sanity_check().
-             */
-            h = (mm_header_t)(void *) ((uint8_t *) addr - q->post_size);
-            /* our size is the allocated size plus post_size, in cells */
-            h->size = (size + q->post_size) >> MM_ALIGN_LOG2;
-            h->magic = MM_ALLOC_MAGIC;
-            /* region size grows by block size converted back to bytes */
-            q->size += h->size << MM_ALIGN_LOG2;
-            /* adjust new post_size to be accurate */
-            q->post_size = (q->post_size + size) & (MM_ALIGN - 1);
-            free (h + 1);
-            return;
-        }
-    }
-
-    /*
-     * If you want to modify the code below, please also take a look at
-     * MM_MGMT_OVERHEAD and make sure it is synchronized with the code.
-     */
-
-    /* Allocate a region from the head.  */
-    r = (mm_region_t) ALIGN_UP ((intptr_t) addr, MM_ALIGN);
-
-    /* If this region is too small, ignore it.  */
-    if (size < MM_ALIGN + (char *) r - (char *) addr + sizeof (*r))
-        return;
-
-    size -= (char *) r - (char *) addr + sizeof (*r);
-
-    h = (mm_header_t) (r + 1);
-    h->next = h;
-    h->magic = MM_FREE_MAGIC;
-    h->size = (size >> MM_ALIGN_LOG2);
-
-    r->first = h;
-    r->pre_size = (intptr_t) r - (intptr_t) addr;
-    r->size = (h->size << MM_ALIGN_LOG2);
-    r->post_size = size - r->size;
-
-    /* Find where to insert this region. Put a smaller one before bigger ones,
-     *     to prevent fragmentation.  */
-    for (p = &mm_base, q = *p; q; p = &(q->next), q = *p)
-        if (q->size > r->size)
-            break;
-
-    *p = r;
-    r->next = q;
 }
 
 /* Allocate the number of units N with the alignment ALIGN from the ring
@@ -425,7 +243,7 @@ real_malloc (mm_header_t *first, size_t n, size_t align)
 
 /* Allocate SIZE bytes with the alignment ALIGN and return the pointer.  */
 void *
-memalign (size_t align, size_t size)
+bios_memalign (size_t align, size_t size)
 {
     mm_region_t r;
     size_t n = ((size + MM_ALIGN - 1) >> MM_ALIGN_LOG2) + 1;
@@ -524,50 +342,16 @@ fail:
     return 0;
 }
 
-/*
- * Allocate NMEMB instances of SIZE bytes and return the pointer, or error on
- * integer overflow.
- */
-void *
-calloc (size_t nmemb, size_t size)
-{
-    void *ret;
-    size_t sz = 0;
-
-    if (safe_mul (nmemb, size, &sz))
-        die ("overflow is detected\n");
-
-    ret = memalign (0, sz);
-    if (!ret)
-        return NULL;
-
-    memset (ret, 0, sz);
-    return ret;
-}
-
 /* Allocate SIZE bytes and return the pointer.  */
-void *
-malloc (size_t size)
+static void *
+bios_malloc (size_t size)
 {
-    return memalign (0, size);
-}
-
-/* Allocate SIZE bytes, clear them and return the pointer.  */
-void *
-zalloc (size_t size)
-{
-    void *ret;
-
-    ret = memalign (0, size);
-    if (ret)
-        memset (ret, 0, size);
-
-    return ret;
+    return bios_memalign (0, size);
 }
 
 /* Deallocate the pointer PTR.  */
-void
-free (void *ptr)
+static void
+bios_free (void *ptr)
 {
     mm_header_t p;
     mm_region_t r;
@@ -644,38 +428,175 @@ free (void *ptr)
     }
 }
 
-/* Reallocate SIZE bytes and return the pointer. The contents will be
- *   the same as that of PTR.  */
-void *
-realloc (void *ptr, size_t size)
+/* Initialize a region starting from ADDR and whose size is SIZE,
+ *   to use it as free space.  */
+void
+bios_mm_init_region (void *addr, size_t size)
 {
-    mm_header_t p;
-    mm_region_t r;
-    void *q;
-    size_t n;
+    mm_header_t h;
+    mm_region_t r, *p, q;
 
-    if (! ptr)
-        return malloc (size);
+    DBG ("Using memory for heap: start=%p, end=%p\n",
+         addr, (char *) addr + (unsigned int) size);
 
-    if (! size)
+    /* Exclude last 4K to avoid overflows. */
+    /* If addr + 0x1000 overflows then whole region is in excluded zone.  */
+    if ((intptr_t) addr > ~((intptr_t) 0x1000))
+        return;
+
+    /* If addr + 0x1000 + size overflows then decrease size.  */
+    if (((intptr_t) addr + 0x1000) > ~(intptr_t) size)
+        size = ((intptr_t) -0x1000) - (intptr_t) addr;
+
+    /* Attempt to merge this region with every existing region */
+    for (p = &mm_base, q = *p; q; p = &(q->next), q = *p)
     {
-        free (ptr);
-        return 0;
+        /*
+         * Is the new region immediately below an existing region? That
+         * is, is the address of the memory we're adding now (addr) + size
+         * of the memory we're adding (size) + the bytes we couldn't use
+         * at the start of the region we're considering (q->pre_size)
+         * equal to the address of q? In other words, does the memory
+         * looks like this?
+         *
+         * addr                          q
+         *   |----size-----|-q->pre_size-|<q region>|
+         */
+        if ((uint8_t *) addr + size + q->pre_size == (uint8_t *) q)
+        {
+            /*
+             * Yes, we can merge the memory starting at addr into the
+             * existing region from below. Align up addr to MM_ALIGN
+             * so that our new region has proper alignment.
+             */
+            r = (mm_region_t) ALIGN_UP ((intptr_t) addr, MM_ALIGN);
+            /* Copy the region data across */
+            *r = *q;
+            /* Consider all the new size as pre-size */
+            r->pre_size += size;
+
+            /*
+             * If we have enough pre-size to create a block, create a
+             * block with it. Mark it as allocated and pass it to
+             * free (), which will sort out getting it into the free
+             * list.
+             */
+            if (r->pre_size >> MM_ALIGN_LOG2)
+            {
+                h = (mm_header_t) (r + 1);
+                /* block size is pre-size converted to cells */
+                h->size = (r->pre_size >> MM_ALIGN_LOG2);
+                h->magic = MM_ALLOC_MAGIC;
+                /* region size grows by block size converted back to bytes */
+                r->size += h->size << MM_ALIGN_LOG2;
+                /* adjust pre_size to be accurate */
+                r->pre_size &= (MM_ALIGN - 1);
+                *p = r;
+                bios_free (h + 1);
+            }
+            /* Replace the old region with the new region */
+            *p = r;
+            return;
+        }
+
+        /*
+         * Is the new region immediately above an existing region? That
+         * is:
+         *   q                       addr
+         *   |<q region>|-q->post_size-|----size-----|
+         */
+        if ((uint8_t *) q + sizeof (*q) + q->size + q->post_size ==
+            (uint8_t *) addr)
+        {
+            /*
+             * Yes! Follow a similar pattern to above, but simpler.
+             * Our header starts at address - post_size, which should align us
+             * to a cell boundary.
+             *
+             * Cast to (void *) first to avoid the following build error:
+             *   kern/mm.c: In function ‘bios_mm_init_region’:
+             *   kern/mm.c:211:15: error: cast increases required alignment of target type [-Werror=cast-align]
+             *     211 |           h = (mm_header_t) ((uint8_t *) addr - q->post_size);
+             *         |               ^
+             * It is safe to do that because proper alignment is enforced in mm_size_sanity_check().
+             */
+            h = (mm_header_t)(void *) ((uint8_t *) addr - q->post_size);
+            /* our size is the allocated size plus post_size, in cells */
+            h->size = (size + q->post_size) >> MM_ALIGN_LOG2;
+            h->magic = MM_ALLOC_MAGIC;
+            /* region size grows by block size converted back to bytes */
+            q->size += h->size << MM_ALIGN_LOG2;
+            /* adjust new post_size to be accurate */
+            q->post_size = (q->post_size + size) & (MM_ALIGN - 1);
+            bios_free (h + 1);
+            return;
+        }
     }
 
-    /* FIXME: Not optimal.  */
-    n = ((size + MM_ALIGN - 1) >> MM_ALIGN_LOG2) + 1;
-    get_header_from_pointer (ptr, &p, &r);
+    /*
+     * If you want to modify the code below, please also take a look at
+     * MM_MGMT_OVERHEAD and make sure it is synchronized with the code.
+     */
 
-    if (p->size >= n)
-        return ptr;
+    /* Allocate a region from the head.  */
+    r = (mm_region_t) ALIGN_UP ((intptr_t) addr, MM_ALIGN);
 
-    q = malloc (size);
-    if (! q)
-        return q;
+    /* If this region is too small, ignore it.  */
+    if (size < MM_ALIGN + (char *) r - (char *) addr + sizeof (*r))
+        return;
 
-    /* We've already checked that p->size < n.  */
-    memcpy (q, ptr, p->size << MM_ALIGN_LOG2);
-    free (ptr);
-    return q;
+    size -= (char *) r - (char *) addr + sizeof (*r);
+
+    h = (mm_header_t) (r + 1);
+    h->next = h;
+    h->magic = MM_FREE_MAGIC;
+    h->size = (size >> MM_ALIGN_LOG2);
+
+    r->first = h;
+    r->pre_size = (intptr_t) r - (intptr_t) addr;
+    r->size = (h->size << MM_ALIGN_LOG2);
+    r->post_size = size - r->size;
+
+    /* Find where to insert this region. Put a smaller one before bigger ones,
+     *     to prevent fragmentation.  */
+    for (p = &mm_base, q = *p; q; p = &(q->next), q = *p)
+        if (q->size > r->size)
+            break;
+
+    *p = r;
+    r->next = q;
+}
+
+static void bios_putchar (int c)
+{
+    struct bootapp_callback_params params;
+    memset (&params, 0, sizeof (params));
+    params.vector.interrupt = 0x10;
+    params.eax = (0x0e00 | c);
+    params.ebx = 0x0007;
+    call_interrupt (&params);
+}
+
+static int bios_getchar (void)
+{
+    struct bootapp_callback_params params;
+    memset (&params, 0, sizeof (params));
+    params.vector.interrupt = 0x16;
+    call_interrupt (&params);
+    return params.al;
+}
+
+void __attribute__ ((noreturn)) bios_reboot (void);
+#endif
+
+void
+bios_init (void)
+{
+#if defined(__i386__) || defined(__x86_64__)
+    pm->_reboot = bios_reboot;
+    pm->_putchar = bios_putchar;
+    pm->_getchar = bios_getchar;
+    pm->_malloc = bios_malloc;
+    pm->_free = bios_free;
+#endif
 }

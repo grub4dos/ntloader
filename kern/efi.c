@@ -17,6 +17,7 @@
  */
 
 #include "ntloader.h"
+#include "pmapi.h"
 #include "efi.h"
 #include "efi/Protocol/BlockIo.h"
 #include "efi/Protocol/DevicePath.h"
@@ -55,7 +56,7 @@ EFI_GUID efi_load_file2_protocol_guid
 EFI_GUID efi_gop_guid
 = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 
-void *efi_malloc (size_t size)
+static void *efi_malloc (size_t size)
 {
     EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
     EFI_STATUS efirc;
@@ -66,7 +67,7 @@ void *efi_malloc (size_t size)
     return ptr;
 }
 
-void efi_free (void *ptr)
+static void efi_free (void *ptr)
 {
     efi_systab->BootServices->FreePool (ptr);
     ptr = 0;
@@ -88,4 +89,44 @@ void *efi_allocate_pages (UINTN pages, EFI_MEMORY_TYPE type)
     if (efirc != EFI_SUCCESS)
         die ("Could not allocate memory.\n");
     return (void *) (intptr_t) addr;
+}
+
+static void efi_putchar (int c)
+{
+    EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout;
+    wchar_t wbuf[2];
+    conout = efi_systab->ConOut;
+    wbuf[0] = c;
+    wbuf[1] = 0;
+    conout->OutputString (conout, wbuf);
+}
+
+static int efi_getchar (void)
+{
+    EFI_BOOT_SERVICES *bs;
+    EFI_SIMPLE_TEXT_INPUT_PROTOCOL *conin;
+    EFI_INPUT_KEY key;
+    UINTN index;
+
+    bs = efi_systab->BootServices;
+    conin = efi_systab->ConIn;
+    bs->WaitForEvent (1, &conin->WaitForKey, &index);
+    conin->ReadKeyStroke (conin, &key);
+    return (int) key.UnicodeChar;
+}
+
+static void __attribute__ ((noreturn)) efi_reboot (void)
+{
+    EFI_RUNTIME_SERVICES *rs = efi_systab->RuntimeServices;
+    rs->ResetSystem (EfiResetWarm, 0, 0, NULL);
+    __builtin_unreachable ();
+}
+
+void efi_init (void)
+{
+    pm->_reboot = efi_reboot;
+    pm->_putchar = efi_putchar;
+    pm->_getchar = efi_getchar;
+    pm->_malloc = efi_malloc;
+    pm->_free = efi_free;
 }

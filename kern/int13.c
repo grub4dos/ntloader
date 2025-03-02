@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "ntloader.h"
+#include "pmapi.h"
 #include "int13.h"
 #include "vdisk.h"
 

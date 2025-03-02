@@ -58,13 +58,13 @@ startup:
 	call	main
 
 	/* Should never return */
-	jmp	reboot
+	jmp	bios_reboot
 	.size	startup, . - startup
 
 	/* Reboot system */
 	.section ".text", "ax", @progbits
-	.globl	reboot
-reboot:
+	.globl	bios_reboot
+bios_reboot:
 	/* Attempt a warm reboot via the keyboard controller */
 	movw	$WARM_REBOOT_MAGIC, WARM_REBOOT_FLAG
 	movb	$KC_CMD_RESET, %al
@@ -74,7 +74,7 @@ reboot:
 	/* If even that failed, hang the system */
 1:	hlt
 	jmp	1b
-	.size	reboot, . - reboot
+	.size	bios_reboot, . - bios_reboot
 
 	/* Global descriptor table */
 	.section ".rodata16", "aw", @progbits

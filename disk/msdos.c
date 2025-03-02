@@ -22,7 +22,7 @@
 #include <strings.h>
 #include "msdos.h"
 #include "fsuuid.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "ntloader.h"
 
 static unsigned part_count = 0;
@@ -68,9 +68,9 @@ check_mbr (void *disk, uint32_t start_lba, int (*disk_read)
         {
             start_addr = ((uint64_t) mbr.entries[i].start + start_lba) << 9;
             DBG ("MBR Start=0x%llx Signature=%04X\n", start_addr, mbr.unique_signature);
-            memcpy (nt_cmdline->partid, &start_addr, sizeof (start_addr));
-            nt_cmdline->partmap = 0x01;
-            memcpy (nt_cmdline->diskid, &mbr.unique_signature, sizeof (uint32_t));
+            memcpy (pm->partid, &start_addr, sizeof (start_addr));
+            pm->partmap = 0x01;
+            memcpy (pm->diskid, &mbr.unique_signature, sizeof (uint32_t));
             return 1;
         }
     }

@@ -20,7 +20,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include <ntloader.h>
+#include <pmapi.h>
 #include <efi.h>
 #include <efidisk.h>
 #include <msdos.h>
@@ -39,20 +41,20 @@ locate_handle (EFI_LOCATE_SEARCH_TYPE search_type,
     EFI_HANDLE *buffer;
     UINTN buffer_size = 8 * sizeof (EFI_HANDLE);
 
-    buffer = efi_malloc (buffer_size);
+    buffer = malloc (buffer_size);
 
     status = bs->LocateHandle (search_type, protocol, search_key,
                                &buffer_size, buffer);
     if (status == EFI_BUFFER_TOO_SMALL)
     {
-        efi_free (buffer);
-        buffer = efi_malloc (buffer_size);
+        free (buffer);
+        buffer = malloc (buffer_size);
         status = bs->LocateHandle (search_type, protocol, search_key,
                                    &buffer_size, buffer);
     }
 
     if (status != EFI_SUCCESS)
-        efi_free (buffer);
+        free (buffer);
 
     *num_handles = buffer_size / sizeof (EFI_HANDLE);
     return buffer;
@@ -184,7 +186,7 @@ duplicate_device_path (const EFI_DEVICE_PATH *dp)
         if (END_ENTIRE_DP (p))
             break;
     }
-    p = efi_malloc (total_size);
+    p = malloc (total_size);
     if (! p)
         return 0;
     memcpy (p, dp, total_size);
@@ -235,7 +237,7 @@ make_devices (void)
             continue;
 
         //print_device_path (dp);
-        d = efi_malloc (sizeof (*d));
+        d = malloc (sizeof (*d));
         d->handle = *handle;
         d->dp = dp;
         d->ldp = ldp;
@@ -244,7 +246,7 @@ make_devices (void)
         devices = d;
     }
 
-    efi_free (handles);
+    free (handles);
 
     return devices;
 }
@@ -273,7 +275,7 @@ find_parent_device (struct efidisk_data *devices, struct efidisk_data *d)
         if (compare_device_paths (parent->dp, dp) == 0)
             break;
     }
-    efi_free (dp);
+    free (dp);
     return parent;
 }
 
@@ -297,7 +299,7 @@ add_device (struct efidisk_data **devices, struct efidisk_data *d)
         else if (ret > 0)
             break;
     }
-    n = efi_malloc (sizeof (*n));
+    n = malloc (sizeof (*n));
     if (! n)
         return;
     memcpy (n, d, sizeof (*n));
@@ -415,7 +417,7 @@ free_devices (struct efidisk_data *devices)
     for (p = devices; p; p = q)
     {
         q = p->next;
-        efi_free (p);
+        free (p);
     }
 }
 

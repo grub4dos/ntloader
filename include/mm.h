@@ -117,6 +117,8 @@ mm_size_sanity_check (void)
  */
 typedef int (*mm_add_region_func_t) (size_t, unsigned int);
 
-void mm_init_region (void *addr, size_t size);
+extern void bios_mm_init_region (void *addr, size_t size);
+
+extern void *bios_memalign (size_t align, size_t size);
 
 #endif /* ! _MM_H */

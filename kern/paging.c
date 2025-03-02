@@ -29,6 +29,7 @@
 #include <string.h>
 #include <assert.h>
 #include "ntloader.h"
+#include "pmapi.h"
 #include "e820.h"
 #include "paging.h"
 

@@ -23,7 +23,7 @@
 #include "msdos.h"
 #include "gpt.h"
 #include "fsuuid.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "ntloader.h"
 
 static uint8_t gpt_magic[8] = GPT_HEADER_MAGIC;
@@ -68,9 +68,9 @@ check_gpt_partmap (void *disk,
         if (check_fsuuid (disk, entry.start, disk_read))
         {
             DBG ("GPT LBA=%lld\n", (unsigned long long)entry.start);
-            memcpy (nt_cmdline->partid, &entry.guid, 16);
-            nt_cmdline->partmap = 0x00;
-            memcpy (nt_cmdline->diskid, &gpt.guid, 16);
+            memcpy (pm->partid, &entry.guid, 16);
+            pm->partmap = 0x00;
+            memcpy (pm->diskid, &gpt.guid, 16);
             return 1;
         }
     }

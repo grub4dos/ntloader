@@ -49,6 +49,14 @@
 /** 16 bit real mode data segment */
 #define REAL_DS 0x60
 
+/* Refer to i386 symbols as needed */
+#undef i386
+#if __x86_64__
+#define i386(symbol) __i386_ ## symbol
+#else
+#define i386(symbol) symbol
+#endif
+
 #ifndef ASSEMBLY
 
 #include <stdint.h>
@@ -120,37 +128,6 @@ static inline unsigned int page_len (const void *start, const void *end)
     return (page_end (end) - page_start (start));
 }
 
-/**
- * Bochs magic breakpoint
- *
- */
-static inline void bochsbp (void)
-{
-    __asm__ __volatile__ ("xchgw %bx, %bx");
-}
-
-/** Debugging output */
-#if DEBUG == 1 || DEBUG == 2
-#define DBG(...) \
-do \
-{ \
-    printf (__VA_ARGS__); \
-} while (0)
-#else
-#define DBG(...)
-#endif
-
-/** Verbose debugging output */
-#if DEBUG == 2
-#define DBG2(...) \
-do \
-{ \
-    printf (__VA_ARGS__); \
-} while (0)
-#else
-#define DBG2(...)
-#endif
-
 /* Branch prediction macros */
 #define likely(x) __builtin_expect (!! (x), 1)
 #define unlikely(x) __builtin_expect ((x), 0)
@@ -158,7 +135,6 @@ do \
 #ifdef __i386__
 extern void call_real (struct bootapp_callback_params *params);
 extern void call_interrupt (struct bootapp_callback_params *params);
-extern void __attribute__ ((noreturn)) reboot (void);
 #else
 static inline void call_real (struct bootapp_callback_params *params)
 {
@@ -168,13 +144,7 @@ static inline void call_interrupt (struct bootapp_callback_params *params)
 {
     (void) params;
 }
-static inline void reboot (void)
-{
-}
 #endif
-
-extern void __attribute__ ((noreturn, format (printf, 1, 2)))
-die (const char *fmt, ...);
 
 extern unsigned long __stack_chk_guard;
 extern void init_cookie (void);

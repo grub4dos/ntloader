@@ -22,7 +22,7 @@
 #include <wchar.h>
 #include "ntloader.h"
 #include "vdisk.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "charset.h"
 #include "payload.h"
 #include "efi.h"
@@ -66,7 +66,7 @@ efi_load_sfs_initrd (UINTN *len, EFI_HANDLE handle)
     wchar_t wpath[MAX_PATH + 1];
 
     *utf8_to_ucs2 (wpath, MAX_PATH + 1,
-                   (uint8_t *) nt_cmdline->initrd_path) = L'\0';
+                   (uint8_t *) pm->initrd_path) = L'\0';
 
     /* Open file system */
     efirc = bs->OpenProtocol (handle,

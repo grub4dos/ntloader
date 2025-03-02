@@ -28,6 +28,7 @@
 #include "vdisk.h"
 #include "payload.h"
 #include "cmdline.h"
+#include "pmapi.h"
 #include "paging.h"
 #include "e820.h"
 #include "biosdisk.h"
@@ -88,7 +89,7 @@ static void call_interrupt_wrapper (struct bootapp_callback_params *params)
     }
     else if ((params->vector.interrupt == 0x10) &&
              (params->ax == 0x4f01) &&
-             (nt_cmdline->textmode))
+             (pm->textmode))
     {
         /* Mark all VESA video modes as unsupported */
         uint16_t *attributes = REAL_PTR (params->es, params->di);
@@ -237,6 +238,8 @@ int main (void)
     /* Initialise stack cookie */
     init_cookie();
 
+    bios_init ();
+
     /* Print welcome banner */
     printf ("\n\nntloader " VERSION "\n\n");
 
@@ -264,7 +267,7 @@ int main (void)
     callback.drive = initialise_int13();
 
     /* Load bootmgr.exe into memory */
-    if (load_pe (nt_cmdline->bootmgr, nt_cmdline->bootmgr_length, &pe) != 0)
+    if (load_pe (pm->bootmgr, pm->bootmgr_length, &pe) != 0)
         die ("FATAL: Could not load bootmgr.exe\n");
 
     /* Relocate initrd above 4GB if possible, to free up 32-bit memory */

@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "ntloader.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "vdisk.h"
 #include "efi.h"
 #include "efiboot.h"
@@ -87,7 +87,7 @@ efi_open_protocol_wrapper (EFI_HANDLE handle, EFI_GUID *protocol,
                                                 &efi_gop_blocked_guid,
                                                 &efi_gop_blocked,
                                                 NULL) == 0) &&
-        (nt_cmdline->textmode))
+        (pm->textmode))
     {
         DBG ("Forcing text mode output\n");
         return EFI_INVALID_PARAMETER;
@@ -119,14 +119,14 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
 
     /* Allocate memory */
     data = efi_allocate_pages (
-        BYTES_TO_PAGES (nt_cmdline->bootmgr_length), EfiLoaderCode);
+        BYTES_TO_PAGES (pm->bootmgr_length), EfiLoaderCode);
 
     /* Copy image */
-    memcpy (data, nt_cmdline->bootmgr, nt_cmdline->bootmgr_length);
+    memcpy (data, pm->bootmgr, pm->bootmgr_length);
 
     /* Load image */
     efirc = bs->LoadImage (FALSE, efi_image_handle, path, data,
-                           nt_cmdline->bootmgr_length, &handle);
+                           pm->bootmgr_length, &handle);
     if (efirc != 0)
     {
         die ("Could not load bootmgfw.efi: %#lx\n",

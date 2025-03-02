@@ -26,17 +26,17 @@
 #include "ntloader.h"
 #include "reg.h"
 #include "bcd.h"
-#include "cmdline.h"
+#include "pmapi.h"
 #include "charset.h"
 #include "efi.h"
 
 static void
 bcd_replace_suffix (const wchar_t *src, const wchar_t *dst)
 {
-    uint8_t *p = nt_cmdline->bcd;
+    uint8_t *p = pm->bcd;
     uint32_t ofs;
     const size_t len = sizeof(wchar_t) * 5; // . E F I \0
-    for (ofs = 0; ofs + len < nt_cmdline->bcd_length; ofs++)
+    for (ofs = 0; ofs + len < pm->bcd_length; ofs++)
     {
         if (memcmp (p + ofs, src, len) == 0)
         {
@@ -206,19 +206,19 @@ bcd_patch_dp (hive_t *hive, HKEY objects, uint32_t boottype,
     }
 
     /* os device */
-    if (nt_cmdline->fsuuid[0])
+    if (pm->fsuuid[0])
         data[ofs + 0x00] = 0x06; // 05=boot, 06=disk
     else
         data[ofs + 0x00] = 0x05;
     data[ofs + 0x08] = 0x48;
-    memcpy (data + ofs + 0x10, nt_cmdline->partid, 16);
-    data[ofs + 0x24] = nt_cmdline->partmap;
-    memcpy (data + ofs + 0x28, nt_cmdline->diskid, 16);
+    memcpy (data + ofs + 0x10, pm->partid, 16);
+    data[ofs + 0x24] = pm->partmap;
+    memcpy (data + ofs + 0x28, pm->diskid, 16);
     if (boottype == NTBOOT_WIM ||
         boottype == NTBOOT_VHD ||
         boottype == NTBOOT_RAM)
         utf8_to_ucs2 ((uint16_t *)(data + ofs + 0x48), MAX_PATH,
-                      (uint8_t *)nt_cmdline->filepath);
+                      (uint8_t *)pm->filepath);
     DBG ("...patched %ls->%ls (device%x)\n", guid, keyname, boottype);
 }
 
@@ -229,8 +229,8 @@ bcd_patch_data (void)
     HKEY root, objects;
     hive_t hive =
     {
-        .size = nt_cmdline->bcd_length,
-        .data = nt_cmdline->bcd,
+        .size = pm->bcd_length,
+        .data = pm->bcd,
     };
 
     /* Open BCD hive */
@@ -243,7 +243,7 @@ bcd_patch_data (void)
     DBG ("BCD hive load OK.\n");
 
     /* Check entry type */
-    switch (nt_cmdline->boottype)
+    switch (pm->boottype)
     {
         case NTBOOT_VHD:
             entry_guid = GUID_VHDB;
@@ -263,7 +263,7 @@ bcd_patch_data (void)
     bcd_patch_szw (&hive, objects, GUID_BOOTMGR,
                    BCDOPT_ORDER, entry_guid); // menu display order
     bcd_patch_u64 (&hive, objects, GUID_BOOTMGR,
-                   BCDOPT_TIMEOUT, nt_cmdline->timeout); // timeout
+                   BCDOPT_TIMEOUT, pm->timeout); // timeout
 
     /* Patch Objects->{Resume} */
     bcd_patch_dp (&hive, objects, NTBOOT_REC,
@@ -276,14 +276,14 @@ bcd_patch_data (void)
                   BCDOPT_SYSROOT, BCD_DEFAULT_HIBERFIL); // hiberfil
 
     /* Patch Objects->{Ramdisk} */
-    if (nt_cmdline->boottype == NTBOOT_RAM)
+    if (pm->boottype == NTBOOT_RAM)
     {
         bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_SDIDEV);
         bcd_delete_key (&hive, objects, GUID_RAMDISK, BCDOPT_SDIPATH);
         bcd_patch_bool (&hive, objects, GUID_RAMDISK,
-                        BCDOPT_EXPORTCD, nt_cmdline->exportcd);
+                        BCDOPT_EXPORTCD, pm->exportcd);
         bcd_patch_u64 (&hive, objects, GUID_RAMDISK,
-                       BCDOPT_IMGOFS, nt_cmdline->imgofs);
+                       BCDOPT_IMGOFS, pm->imgofs);
     }
     else
     {
@@ -293,48 +293,48 @@ bcd_patch_data (void)
 
     /* Patch Objects->{Options} */
     bcd_patch_sz (&hive, objects, GUID_OPTN,
-                  BCDOPT_CMDLINE, nt_cmdline->loadopt);
+                  BCDOPT_CMDLINE, pm->loadopt);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_TESTMODE, nt_cmdline->testmode);
+                    BCDOPT_TESTMODE, pm->testmode);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_DETHAL, nt_cmdline->hal);
+                    BCDOPT_DETHAL, pm->hal);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_WINPE, nt_cmdline->minint);
+                    BCDOPT_WINPE, pm->minint);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_NOVGA, nt_cmdline->novga);
+                    BCDOPT_NOVGA, pm->novga);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_NOVESA, nt_cmdline->novesa);
+                    BCDOPT_NOVESA, pm->novesa);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_ADVOPT, nt_cmdline->advmenu);
+                    BCDOPT_ADVOPT, pm->advmenu);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_OPTEDIT, nt_cmdline->optedit);
+                    BCDOPT_OPTEDIT, pm->optedit);
     bcd_patch_bool (&hive, objects, GUID_OPTN,
-                    BCDOPT_TEXT, nt_cmdline->textmode);
+                    BCDOPT_TEXT, pm->textmode);
     bcd_patch_u64 (&hive, objects, GUID_OPTN,
-                   BCDOPT_NX, nt_cmdline->nx);
+                   BCDOPT_NX, pm->nx);
     bcd_patch_u64 (&hive, objects, GUID_OPTN,
-                   BCDOPT_PAE, nt_cmdline->pae);
+                   BCDOPT_PAE, pm->pae);
 
     /* Patch Objects->{Resolution} */
-    if (nt_cmdline->hires == NTARG_BOOL_NA)
+    if (pm->hires == NTARG_BOOL_NA)
     {
         bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_HIGHRES);
         bcd_patch_u64 (&hive, objects, GUID_OPTN,
-                       BCDOPT_GFXMODE, nt_cmdline->gfxmode);
+                       BCDOPT_GFXMODE, pm->gfxmode);
     }
     else
     {
         bcd_delete_key (&hive, objects, GUID_OPTN, BCDOPT_GFXMODE);
         bcd_patch_bool (&hive, objects, GUID_OPTN,
-                        BCDOPT_HIGHRES, nt_cmdline->hires);
+                        BCDOPT_HIGHRES, pm->hires);
     }
 
-    if (nt_cmdline->safemode)
+    if (pm->safemode)
     {
         bcd_patch_u64 (&hive, objects, GUID_OPTN,
-                       BCDOPT_SAFEMODE, nt_cmdline->safeboot);
+                       BCDOPT_SAFEMODE, pm->safeboot);
         bcd_patch_bool (&hive, objects, GUID_OPTN,
-                        BCDOPT_ALTSHELL, nt_cmdline->altshell);
+                        BCDOPT_ALTSHELL, pm->altshell);
     }
     else
     {
@@ -343,14 +343,14 @@ bcd_patch_data (void)
     }
 
     /* Patch Objects->{Entry} */
-    bcd_patch_dp (&hive, objects, nt_cmdline->boottype,
+    bcd_patch_dp (&hive, objects, pm->boottype,
                   entry_guid, BCDOPT_APPDEV); // app device
-    bcd_patch_dp (&hive, objects, nt_cmdline->boottype,
+    bcd_patch_dp (&hive, objects, pm->boottype,
                   entry_guid, BCDOPT_OSDDEV); // os device
     bcd_patch_sz (&hive, objects, entry_guid,
-                  BCDOPT_WINLOAD, nt_cmdline->winload);
+                  BCDOPT_WINLOAD, pm->winload);
     bcd_patch_sz (&hive, objects, entry_guid,
-                  BCDOPT_SYSROOT, nt_cmdline->sysroot);
+                  BCDOPT_SYSROOT, pm->sysroot);
 
     if (efi_systab)
         bcd_replace_suffix (L".exe", L".efi");

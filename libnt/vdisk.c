@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "ctype.h"
-#include "ntloader.h"
+#include "pmapi.h"
 #include "vdisk.h"
 
 /** Virtual files */
