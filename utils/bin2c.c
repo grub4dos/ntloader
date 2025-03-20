@@ -47,7 +47,12 @@ main (int argc, char *argv[])
     buf = (char *) malloc (file_size);
     assert (buf);
 
-    fread (buf, file_size, 1, f_input);
+    if (fread (buf, file_size, 1, f_input) != 1)
+    {
+        fprintf (stderr, "read %s failed\n", argv[1]);
+        fclose (f_input);
+        return -1;
+    }
     fclose (f_input);
 
     f_output = fopen (argv[2], "w");
