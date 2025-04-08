@@ -12,8 +12,8 @@ menuentry "Boot Windows NT6+ WIM" {
         linux /path/to/ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
         initrd /path/to/initrd.cpio
     else
-        linux16 /ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
-        initrd16 /initrd.cpio
+        linux16 /path/to/ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
+        initrd16 /path/to/initrd.cpio
    fi;
 }
 
@@ -25,8 +25,8 @@ menuentry "Boot Windows NT6+ VHD/VHDx" {
         linux /path/to/ntloader uuid=${dev_uuid} vhd=/path/to/windows.vhd
         initrd /path/to/initrd.cpio
     else
-        linux16 /ntloader uuid=${dev_uuid} vhd=/path/to/windows.vhd
-        initrd16 /initrd.cpio
+        linux16 /path/to/ntloader uuid=${dev_uuid} vhd=/path/to/windows.vhd
+        initrd16 /path/to/initrd.cpio
    fi;
 }
 
@@ -37,8 +37,8 @@ menuentry "Boot Windows NT6+ on (hdx,y)" {
         linux /path/to/ntloader uuid=${dev_uuid}
         initrd /path/to/initrd.cpio
     else
-        linux16 /ntloader uuid=${dev_uuid}
-        initrd16 /initrd.cpio
+        linux16 /path/to/ntloader uuid=${dev_uuid}
+        initrd16 /path/to/initrd.cpio
    fi;
 }
 ```
@@ -59,8 +59,8 @@ menuentry "Boot Windows NT6+ WIM" {
     if [ "${grub_platform}" = "efi" ]; then
         chainloader /path/to/ntloader initrd=/path/to/initrd.cpio uuid=${dev_uuid} wim=/path/to/winpe.wim
     else
-        linux16 /ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
-        initrd16 /initrd.cpio
+        linux16 /path/to/ntloader uuid=${dev_uuid} wim=/path/to/winpe.wim
+        initrd16 /path/to/initrd.cpio
    fi;
 }
 ```
