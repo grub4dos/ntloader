@@ -161,6 +161,8 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
         efi_open_protocol_wrapper;
 #endif
 
+    efi_cls ();
+
     /* Start image */
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
     {

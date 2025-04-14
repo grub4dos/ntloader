@@ -81,4 +81,6 @@ extern void efi_free (void *ptr);
 extern void efi_free_pages (void *ptr, UINTN pages);
 extern void *efi_allocate_pages (UINTN pages, EFI_MEMORY_TYPE type);
 
+extern void efi_cls (void);
+
 #endif /* _EFI_H */
