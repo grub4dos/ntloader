@@ -7,6 +7,7 @@ OBJECTS += kern/efiblock.o
 OBJECTS += kern/efiboot.o
 OBJECTS += kern/efifile.o
 OBJECTS += kern/efimain.o
+OBJECTS += kern/efiterm.o
 OBJECTS += kern/payload.o
 
 OBJECTS += kern/callback.o
