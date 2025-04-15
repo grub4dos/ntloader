@@ -161,7 +161,8 @@ void efi_boot (EFI_DEVICE_PATH_PROTOCOL *path,
         efi_open_protocol_wrapper;
 #endif
 
-    efi_cls ();
+    if (! nt_cmdline->textmode)
+        efi_set_text_mode (0);
 
     /* Start image */
     if ((efirc = bs->StartImage (handle, NULL, NULL)) != 0)
