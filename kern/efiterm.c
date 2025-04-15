@@ -30,6 +30,69 @@
 #include "cmdline.h"
 #include "efi.h"
 
+/* The console control protocol is not a part of the EFI spec,
+ * but defined in Intel's Sample Implementation. */
+
+static EFI_GUID efi_console_ctrl_guid =
+{
+    0xf42f7782, 0x12e, 0x4c12,
+    { 0x99, 0x56, 0x49, 0xf9, 0x43, 0x4, 0xf7, 0x21 },
+};
+
+typedef enum
+{
+    EFI_SCREEN_TEXT,
+    EFI_SCREEN_GRAPHICS,
+    EFI_SCREEN_TEXT_MAX_VALUE
+} EFI_SCREEN_MODE;
+
+struct _EFI_CONSOLE_CTRL_PROTOCOL
+{
+    EFI_STATUS
+    (EFIAPI *GetMode) (struct _EFI_CONSOLE_CTRL_PROTOCOL *this,
+                       EFI_SCREEN_MODE *mode,
+                       BOOLEAN *uga_exists,
+                       BOOLEAN *std_in_locked);
+
+    EFI_STATUS
+    (EFIAPI *SetMode) (struct _EFI_CONSOLE_CTRL_PROTOCOL *this,
+                       EFI_SCREEN_MODE mode);
+
+    EFI_STATUS
+    (EFIAPI *LockStdin) (struct _EFI_CONSOLE_CTRL_PROTOCOL *this,
+                         CHAR16 *password);
+};
+typedef struct _EFI_CONSOLE_CTRL_PROTOCOL EFI_CONSOLE_CTRL_PROTOCOL;
+
+int efi_set_text_mode (int on)
+{
+    EFI_STATUS rc;
+    EFI_CONSOLE_CTRL_PROTOCOL *c;
+    EFI_SCREEN_MODE mode, new_mode;
+    EFI_BOOT_SERVICES *bs = efi_systab->BootServices;
+
+    rc = bs->LocateProtocol(&efi_console_ctrl_guid,
+                            NULL,
+                            (void**) &c);
+    if (rc != EFI_SUCCESS)
+    {
+        /* No console control protocol instance available, assume it is
+         * already in text mode. */
+        DBG ("Console control protocol not found, assume text mode.\n");
+        return 1;
+    }
+
+    if (c->GetMode (c, &mode, 0, 0) != EFI_SUCCESS)
+        return 0;
+
+    new_mode = on ? EFI_SCREEN_TEXT : EFI_SCREEN_GRAPHICS;
+    if (mode != new_mode)
+        if (c->SetMode (c, new_mode) != EFI_SUCCESS)
+            return 0;
+
+    return 1;
+}
+
 void efi_cls (void)
 {
     EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *conout = efi_systab->ConOut;

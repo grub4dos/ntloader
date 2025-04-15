@@ -96,6 +96,8 @@ EFI_STATUS EFIAPI efi_main (EFI_HANDLE image_handle,
     /* Initialise stack cookie */
     init_cookie();
 
+    efi_set_text_mode (1);
+
     /* Print welcome banner */
     printf ("\n\nntloader " VERSION "\n\n");
 
