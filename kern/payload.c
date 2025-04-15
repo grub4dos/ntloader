@@ -113,7 +113,7 @@ void extract_initrd (void *ptr, size_t len)
 {
     nt_cmdline->bcd_length = BCD_LEN;
     nt_cmdline->bcd = BCD_RAW;
-    printf ("...load BCD @%p %c%c%c%c [%x]\n", BCD_RAW,
+    DBG ("...load BCD @%p %c%c%c%c [%x]\n", BCD_RAW,
             BCD_RAW[0], BCD_RAW[1], BCD_RAW[2], BCD_RAW[3], BCD_LEN);
     vdisk_add_file ("BCD", BCD_RAW, BCD_LEN, read_mem_file);
 
