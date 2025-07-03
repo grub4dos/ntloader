@@ -36,8 +36,8 @@ do \
 
 enum reg_bool
 {
-    false = 0,
-    true  = 1,
+    reg_false = 0,
+    reg_true  = 1,
 };
 
 static inline int32_t
@@ -52,49 +52,49 @@ static enum reg_bool check_header(hive_t *h)
 {
     HBASE_BLOCK *base_block = (HBASE_BLOCK *)h->data;
     uint32_t csum;
-    enum reg_bool dirty = false;
+    enum reg_bool dirty = reg_false;
 
     if (base_block->Signature != HV_HBLOCK_SIGNATURE)
     {
         DBG("Invalid signature.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Major != HSYS_MAJOR)
     {
         DBG("Invalid major value.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Minor < HSYS_MINOR)
     {
         DBG("Invalid minor value.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Type != HFILE_TYPE_PRIMARY)
     {
         DBG("Type was not HFILE_TYPE_PRIMARY.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Format != HBASE_FORMAT_MEMORY)
     {
         DBG("Format was not HBASE_FORMAT_MEMORY.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Cluster != 1)
     {
         DBG("Cluster was not 1.\n");
-        return false;
+        return reg_false;
     }
 
     if (base_block->Sequence1 != base_block->Sequence2)
     {
         DBG("Sequence1 != Sequence2.\n");
         base_block->Sequence2 = base_block->Sequence1;
-        dirty = true;
+        dirty = reg_true;
     }
 
     // check checksum
@@ -113,7 +113,7 @@ static enum reg_bool check_header(hive_t *h)
     {
         DBG("Invalid checksum.\n");
         base_block->CheckSum = csum;
-        dirty = true;
+        dirty = reg_true;
     }
 
     if (dirty)
@@ -124,7 +124,7 @@ static enum reg_bool check_header(hive_t *h)
         // FIXME - recover by processing LOG files (new style, >= Windows 8.1)
     }
 
-    return true;
+    return reg_true;
 }
 
 void reg_find_root(hive_t *h, HKEY *Key)
@@ -140,7 +140,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
     int32_t size;
     CM_KEY_NODE *nk;
     CM_KEY_FAST_INDEX *lh;
-    enum reg_bool overflow = false;
+    enum reg_bool overflow = reg_false;
 
     // FIXME - make sure no buffer overruns (here and elsewhere)
     // find parent key node
@@ -247,7 +247,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
         {
             if (i >= NameLength)
             {
-                overflow = true;
+                overflow = reg_true;
                 break;
             }
 
@@ -264,7 +264,7 @@ reg_enum_keys(hive_t *h, HKEY Key, uint32_t Index,
         {
             if (i >= NameLength)
             {
-                overflow = true;
+                overflow = reg_true;
                 break;
             }
 
@@ -442,7 +442,7 @@ reg_find_key(hive_t *h, HKEY Parent, const wchar_t *Path, HKEY *Key)
 
         Parent = k;
         Path = &Path[nblen + 1];
-    } while (true);
+    } while (reg_true);
 }
 
 reg_err_t
@@ -519,7 +519,7 @@ reg_enum_values(hive_t *h, HKEY Key,
     CM_KEY_NODE *nk;
     uint32_t *list;
     CM_KEY_VALUE *vk;
-    enum reg_bool overflow = false;
+    enum reg_bool overflow = reg_false;
 
     // find key node
 
@@ -584,7 +584,7 @@ reg_enum_values(hive_t *h, HKEY Key,
         {
             if (i >= NameLength)
             {
-                overflow = true;
+                overflow = reg_true;
                 break;
             }
 
@@ -601,7 +601,7 @@ reg_enum_values(hive_t *h, HKEY Key,
         {
             if (i >= NameLength)
             {
-                overflow = true;
+                overflow = reg_true;
                 break;
             }
 
@@ -842,33 +842,33 @@ static enum reg_bool validate_bins(const uint8_t *data, size_t len)
         if (hb->Signature != HV_HBIN_SIGNATURE)
         {
             DBG("Invalid hbin signature in hive_t at offset %zx.\n", off);
-            return false;
+            return reg_false;
         }
 
         if (hb->FileOffset != off)
         {
             DBG("hbin FileOffset in hive_t was 0x%x, expected %zx.\n", hb->FileOffset,
                  off);
-            return false;
+            return reg_false;
         }
 
         if (hb->Size > len - off)
         {
             DBG("hbin overrun in hive_t at offset %zx.\n", off);
-            return false;
+            return reg_false;
         }
 
         if (hb->Size & 0xfff)
         {
             DBG("hbin Size in hive_t at offset %zx was not multiple of 1000.\n", off);
-            return false;
+            return reg_false;
         }
 
         off += hb->Size;
         data += hb->Size;
     }
 
-    return true;
+    return reg_true;
 }
 
 reg_err_t reg_open_hive(hive_t *h)

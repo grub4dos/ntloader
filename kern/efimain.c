@@ -46,7 +46,7 @@
 	"\n"
 
 /** SBAT metadata (with no terminating NUL) */
-const char sbat[ sizeof (SBAT_CSV) - 1 ] __sbat = SBAT_CSV;
+const char sbat[ sizeof (SBAT_CSV) - 1 ] __sbat __nonstring = SBAT_CSV;
 
 /**
  * Process command line

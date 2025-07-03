@@ -45,4 +45,10 @@
 /* Mark parameter as unused */
 #define __unused __attribute__ ((unused))
 
+#if __GNUC__ >= 8
+#define __nonstring __attribute__((nonstring))
+#else
+#define __nonstring
+#endif
+
 #endif /* _COMPILER_H */

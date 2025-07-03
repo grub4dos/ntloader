@@ -184,7 +184,7 @@ struct bootapp_callback
 struct bootapp_descriptor
 {
     /** Signature */
-    char signature[8];
+    char signature[8] __nonstring;
     /** Version */
     uint32_t version;
     /** Total length */
@@ -261,7 +261,7 @@ struct bootapp_memory_descriptor
 struct bootapp_entry_descriptor
 {
     /** Signature */
-    char signature[8];
+    char signature[8] __nonstring;
     /** Flags */
     uint32_t flags;
     /** GUID */
