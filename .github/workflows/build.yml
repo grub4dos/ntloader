@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Run git checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Build README.md
       run: |
         make -C docs
@@ -36,7 +36,7 @@ jobs:
     needs: generate-docs
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install packages
         run: |
           sudo apt update
