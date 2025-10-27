@@ -23,7 +23,7 @@ jobs:
         .\utils\bcd.bat
 
     - name: Upload BCD
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: bcd
         path: build/bcd
